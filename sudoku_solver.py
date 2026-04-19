@@ -201,6 +201,7 @@ print(solve(sudoku_board))
 #add all sudoku solving strategies
 #add a method checking if a sudoku board is solvable
 #add a method that takes in a sudoku board
-#create a GUI
+#create a GUI to input a sudoku board
 #make a solve method that shows each step as it is solved
 #make this solve method pausable so I can go step by step for hints with arrows walking through steps. Think Chess.com strategy walk throughs
+#add another gamemode where it creates sudoku boards of varying difficulty for you to solve
