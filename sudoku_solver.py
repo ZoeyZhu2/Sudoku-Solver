@@ -196,3 +196,11 @@ def get_box_candidates(board, i, j):
     return box_candidates
 
 print(solve(sudoku_board))
+
+#Next Steps:
+#add all sudoku solving strategies
+#add a method checking if a sudoku board is solvable
+#add a method that takes in a sudoku board
+#create a GUI
+#make a solve method that shows each step as it is solved
+#make this solve method pausable so I can go step by step for hints with arrows walking through steps. Think Chess.com strategy walk throughs
