@@ -101,10 +101,9 @@ def solve(board):
             if board[i][j] == 0:
                 candidates[(i,j)] = {1,2,3,4,5,6,7,8,9}
                 #remove originally present candidates
-                candidates = update_candidates(board, candidates, i, j)
+                candidates = update_candidates_cell(board, candidates, i, j)
 
-    new_board = [row[:] for row in board] #will this be same memory reference or make a copy?
-    #use some sort of recursion?
+    new_board = [row[:] for row in board]
     while check(new_board) == False:
         old_board = [row[:] for row in new_board]
         new_board, candidates = updateBoard(new_board, candidates)
@@ -114,31 +113,13 @@ def solve(board):
     
 
 def updateBoard(board, candidates):
-    #copying board and candidates so I don't change the parameters
+    #copying board and candidates so I don't change the parameters and can compare new with old in solve(board)
     new_board = [row[:] for row in board]
     new_candidates = {key: set(value) for key, value in candidates.items()}
 
     #solve in order of complexity
     #naked singles: only one candidate
-    for i in range(9):
-        for j in range(9):
-            #identify candidate sets with only 1 value
-            if new_board[i][j] == 0:
-                if len(new_candidates[(i,j)]) == 1:
-                    #remove value and set as board value
-                    new_board[i][j] = next(iter(new_candidates[(i,j)]))
-                    del new_candidates[(i,j)]
-                    #now update candidates
-                    #updating every cell in the same row
-                    for col in range(9):
-                        new_candidates = update_candidates(new_board, new_candidates, i, col)
-                    #updating every cell in the same col
-                    for row in range(9):
-                        new_candidates = update_candidates(new_board, new_candidates, row, j)
-                    #updating every cell in the same box
-                    for row in range(i // 3 * 3, i // 3 * 3 + 3):
-                        for col in range(j // 3 * 3, j // 3 * 3 + 3):
-                            new_candidates = update_candidates(new_board, new_candidates, row, col)
+    new_board, new_candidates = naked_singles(new_board, new_candidates)
 
     #hidden singles: a number can only go in one cell in a row/column/box, even if that cell has multiple candidates
     #will have to check separately for rows, cols, and boxes
@@ -163,15 +144,44 @@ def updateBoard(board, candidates):
 
     return new_board, new_candidates
         
-#updates candidates for a particular cell
-def update_candidates(board, candidates, i, j):
+#solves for naked singles in place, which is okay becuase I put new_board and new_candidates in as parameters
+def naked_singles(board, candidates):
+    for i in range(9):
+        for j in range(9):
+            #identify candidate sets with only 1 value
+            if board[i][j] == 0:
+                if len(candidates[(i,j)]) == 1:
+                    #remove value and set as board value
+                    board[i][j] = next(iter(candidates[(i,j)]))
+                    del candidates[(i,j)]
+                    #now update candidates around
+                    candidates = update_candidates_around(board, candidates, i, j, board[i][j])
+    return board, candidates
+
+#updates candidates for a particular cell.
+def update_candidates_cell(board, candidates, i, j):
     if (i, j) in candidates:
-        new_candidates = {key: set(value) for key, value in candidates.items()}
-        new_candidates[(i,j)] = new_candidates[(i,j)] - get_row_candidates(board, i)
-        new_candidates[(i,j)] = new_candidates[(i,j)] - get_col_candidates(board, j)
-        new_candidates[(i,j)] = new_candidates[(i,j)] - get_box_candidates(board, i, j)
-        return new_candidates
+        candidates[(i,j)] = candidates[(i,j)] - get_row_candidates(board, i)
+        candidates[(i,j)] = candidates[(i,j)] - get_col_candidates(board, j)
+        candidates[(i,j)] = candidates[(i,j)] - get_box_candidates(board, i, j)
     return candidates
+
+#updates candidates in a cell's row/col/box after that cell has been changed
+def update_candidates_around(board, candidates, i, j, val):
+    #update row
+    for col in range(9):
+        if (i, col) in candidates:
+            candidates[(i,col)] = candidates[(i,col)].discard(val)
+    #update col
+    for row in range(9):
+        if (row, j) in candidates:
+            candidates[(row,j)] = candidates[(row,j)].discard(val)
+    #update box
+    for row in range(i // 3 * 3, i // 3 * 3 + 3):
+        for col in range(j // 3 * 3, j // 3 * 3 + 3):
+            candidates[(row,col)] = candidates[(row,col)].discard(val)
+    return candidates
+
 
 def get_row_candidates(board, i):
     row_candidates = set()
