@@ -110,28 +110,49 @@ def solve(board):
         if old_board == new_board:
             return "stuck"
     return new_board
-    
 
+#updates candidates for a particular cell.
+def update_candidates_cell(board, candidates, i, j):
+    if (i, j) in candidates:
+        candidates[(i,j)] = candidates[(i,j)] - get_row_candidates(board, i)
+        candidates[(i,j)] = candidates[(i,j)] - get_col_candidates(board, j)
+        candidates[(i,j)] = candidates[(i,j)] - get_box_candidates(board, i, j)
+    return candidates
+
+def get_row_candidates(board, i):
+    row_candidates = set()
+    for j in range(9):
+        if board[i][j] != 0:
+            row_candidates.add(board[i][j])
+    return row_candidates
+
+def get_col_candidates(board, j):
+    col_candidates = set()
+    for i in range(9):
+        if board[i][j] != 0:
+            col_candidates.add(board[i][j])
+    return col_candidates
+
+def get_box_candidates(board, i, j):
+    box_candidates = set()
+    for row in range(i // 3 * 3, i // 3 * 3 + 3):
+        for col in range(j // 3 * 3, j // 3 * 3 + 3):
+            if board[row][col] != 0:
+                box_candidates.add(board[row][col])
+    return box_candidates
+
+#helper method for solve(board)
 def updateBoard(board, candidates):
     #copying board and candidates so I don't change the parameters and can compare new with old in solve(board)
     new_board = [row[:] for row in board]
     new_candidates = {key: set(value) for key, value in candidates.items()}
 
-    #solve in order of complexity
+    #solving in order of complexity
     #naked singles: only one candidate
     new_board, new_candidates = naked_singles(new_board, new_candidates)
 
     #hidden singles: a number can only go in one cell in a row/column/box, even if that cell has multiple candidates
-    #will have to check separately for rows, cols, and boxes
-    #check rows
-    for i in range(9):
-        #keep track of count of each candidate 1-9 in the row. 
-        for j in range(9):
-            #idk pick up here
-    #check cols
-
-    #check boxes
-
+    new_board, new_candidates = hidden_singles(new_board, new_candidates)
 
     #naked pairs: remove candidates if there's two cells with the same 2 candidates
     #hidden pairs: two numbers only appear in two cells within a unit, so all other candidates in those cells can be eliminated
@@ -158,52 +179,80 @@ def naked_singles(board, candidates):
                     candidates = update_candidates_around(board, candidates, i, j, board[i][j])
     return board, candidates
 
-#updates candidates for a particular cell.
-def update_candidates_cell(board, candidates, i, j):
-    if (i, j) in candidates:
-        candidates[(i,j)] = candidates[(i,j)] - get_row_candidates(board, i)
-        candidates[(i,j)] = candidates[(i,j)] - get_col_candidates(board, j)
-        candidates[(i,j)] = candidates[(i,j)] - get_box_candidates(board, i, j)
-    return candidates
+def hidden_singles(board, candidates):
+    #will have to check separately for rows, cols, and boxes
+    #making a new dict where the candidate values are the keys
+    nums = {}
+
+    #check rows
+    for row in range(9):
+        #adding keys 1-9
+        for num in range(1,10):
+            nums[num] = set()
+        for col in range(9):
+            if (row, col) in candidates:
+                for i in candidates[(row, col)]:
+                    nums[i].add((row, col))
+        for num in range(1, 10):
+            if len(nums[num]) == 1:
+                (i, j) = next(iter(nums[num]))
+                board[i][j] = num
+                del candidates[(i,j)]
+                candidates = update_candidates_around(board, candidates, i, j, num)
+    #check cols
+    for col in range(9):
+        #adding keys 1-9
+        for num in range(1,10):
+            nums[num] = set()
+        for row in range(9):
+            if (row, col) in candidates:
+                for i in candidates[(row,col)]:
+                    nums[i].add((row, col))
+        for num in range(1, 10):
+            if len(nums[num]) == 1:
+                (i, j) = next(iter(nums[num]))
+                board[i][j] = num
+                del candidates[(i,j)]
+                candidates = update_candidates_around(board, candidates, i, j, num)
+        
+    #check boxes
+    # 0 1 2
+    # 3 4 5
+    # 6 7 8
+    for box in range(9):
+        #adding keys 1-9
+        for num in range(1,10):
+            nums[num] = set()
+        for row in range(box // 3 * 3, box // 3 * 3 + 3):
+            for col in range((box % 3) * 3, (box % 3) * 3 + 3):
+                if (row, col) in candidates:
+                    for i in candidates[(row, col)]:
+                        nums[i].add((row, col))
+        for num in range(1, 10):
+            if len(nums[num]) == 1:
+                (i, j) = next(iter(nums[num]))
+                board[i][j] = num
+                del candidates[(i,j)]
+                candidates = update_candidates_around(board, candidates, i, j, num)
+    return board, candidates
+
 
 #updates candidates in a cell's row/col/box after that cell has been changed
 def update_candidates_around(board, candidates, i, j, val):
     #update row
     for col in range(9):
         if (i, col) in candidates:
-            candidates[(i,col)] = candidates[(i,col)].discard(val)
+            candidates[(i,col)].discard(val)
     #update col
     for row in range(9):
         if (row, j) in candidates:
-            candidates[(row,j)] = candidates[(row,j)].discard(val)
+            candidates[(row,j)].discard(val)
     #update box
     for row in range(i // 3 * 3, i // 3 * 3 + 3):
         for col in range(j // 3 * 3, j // 3 * 3 + 3):
-            candidates[(row,col)] = candidates[(row,col)].discard(val)
+            if (row, col) in candidates:
+                candidates[(row,col)].discard(val)
     return candidates
-
-
-def get_row_candidates(board, i):
-    row_candidates = set()
-    for j in range(9):
-        if board[i][j] != 0:
-            row_candidates.add(board[i][j])
-    return row_candidates
-
-def get_col_candidates(board, j):
-    col_candidates = set()
-    for i in range(9):
-        if board[i][j] != 0:
-            col_candidates.add(board[i][j])
-    return col_candidates
-
-def get_box_candidates(board, i, j):
-    box_candidates = set()
-    for row in range(i // 3 * 3, i // 3 * 3 + 3):
-        for col in range(j // 3 * 3, j // 3 * 3 + 3):
-            if board[row][col] != 0:
-                box_candidates.add(board[row][col])
-    return box_candidates
 
 print(solve(sudoku_board))
 
