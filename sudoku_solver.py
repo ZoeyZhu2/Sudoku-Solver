@@ -155,7 +155,11 @@ def updateBoard(board, candidates):
     new_board, new_candidates = pointing_pairs(new_board, new_candidates)
 
     #naked triples: three cells in a unit share the same 3 candidates
+    new_board, new_candidates = naked_triples(new_board, new_candidates)
+
     #box line reduction: if a candidate IN A ROW/COL only appears in ONE box IN THE ROW/COL, it can be eliminated from that box outside of the ROW/COL
+    new_board, new_candidates = box_line_reduction(new_board, new_candidates)
+
     #X-wing: only two cells for a candidate in two diff rows/cols, and they appear in the same cols/rows, then the candidate can be eliminated from the rest of the cols outside the rows or rows outside of the cols
     #Swordfish: only two cells for a candidate in 3 diff rows/cols, and they appear in the same 3 cols/rows, then the candidate can be eliminated from the rest of the cols outside of the rows or the rows outside of the cols
     #XY-wing: a cell containing two values intersects two other cells each containing a value from the middle cell and a shared third value (each cell has 2 values). Then everything else in the units of the two wing cells cannot contain the value shared by the wing cells. 
@@ -369,6 +373,7 @@ def hidden_pairs(board, candidates):
                         candidates = update_candidates_around_two_in_a_box(board, candidates, cell_one[0], cell_two[0], cell_one[1], cell_two[1], cand_1, cand_2)
     return board, candidates
 
+#pointing pairs: if a candidate IN A BOX only appears in ONE row or col IN THAT BOX, it can be eliminated from that row/col outside of the box
 def pointing_pairs(board, candidates):
     for box in range(9):
         candidate_cells = {}  # candidate -> list of cells it appears in
@@ -399,16 +404,16 @@ def pointing_pairs(board, candidates):
                     if cs != c:
                         same_col = False
                 if same_row == True:
-                    for col in range(9):
-                        if col < box % 3 * 3 or col >= box % 3 * 3 + 3:  # outside the box
-                            if (r, col) in candidates:
-                                candidates[(r, col)].discard(candidate)
+                    for j in range(9):
+                        if j < box % 3 * 3 or j >= box % 3 * 3 + 3:  # outside the box
+                            if (r, j) in candidates:
+                                candidates[(r, j)].discard(candidate)
 
                 if same_col == True:
-                    for row in range(9):
-                        if row < box // 3 * 3 or row >= box // 3 * 3 + 3:  # outside the box
-                            if (row, c) in candidates:
-                                candidates[(row, c)].discard(candidate)
+                    for i in range(9):
+                        if i < box // 3 * 3 or i >= box // 3 * 3 + 3:  # outside the box
+                            if (i, c) in candidates:
+                                candidates[(i, c)].discard(candidate)
     return board, candidates
 
 def naked_triples(board, candidates):
@@ -436,6 +441,53 @@ def naked_triples(board, candidates):
             if len(union) == 3:
                 val_one, val_two, val_three = union       
                 candidates = update_candidates_around_three_in_a_box(board, candidates, c1[0], c2[0], c3[0], c1[1], c2[1], c3[1], val_one, val_two, val_three)
+    return board, candidates
+
+    #box line reduction: if a candidate IN A ROW/COL only appears in ONE box IN THE ROW/COL, it can be eliminated from that box outside of the ROW/COL
+def box_line_reduction(board, candidates):
+    #check row
+    for row in range(9):
+        candidate_cells = {} #candidates -> cells
+        for col in range(9):
+            if (row, col) in candidates:
+                for candidate in candidates[(row, col)]:
+                    if candidate in candidate_cells:
+                        candidate_cells[candidate].append((row, col))
+                    else:
+                        candidate_cells[candidate] = [(row,col)]
+        potential = {candidate: cells for candidate, cells in candidate_cells.items() if len(cells) <= 2}
+        #if cells are all in the same box
+        for candidate, cells in potential.items():
+            boxes = set(cell[1] // 3 for cell in cells) 
+            same_box = len(boxes) == 1
+            if same_box:
+                (i, j) = cells[0]
+                for r in range(i // 3 * 3, i // 3 * 3 + 3):
+                    for c in range(j // 3 * 3, j // 3 * 3 + 3):
+                        if (r,c) in candidates and r != i:
+                            candidates[(r,c)].discard(candidate)
+
+    #check col
+    for col in range(9):
+        candidate_cells = {} #candidates -> cells
+        for row in range(9):
+            if (row, col) in candidates:
+                for candidate in candidates[(row, col)]:
+                    if candidate in candidate_cells:
+                        candidate_cells[candidate].append((row, col))
+                    else:
+                        candidate_cells[candidate] = [(row,col)]
+        potential = {candidate: cells for candidate, cells in candidate_cells.items() if len(cells) <= 2}
+        #if cells are all in the same box
+        for candidate, cells in potential.items():
+            boxes = set(cell[0] // 3 for cell in cells) 
+            same_box = len(boxes) == 1
+            if same_box:
+                (i, j) = cells[0]
+                for r in range(i // 3 * 3, i // 3 * 3 + 3):
+                    for c in range(j // 3 * 3, j // 3 * 3 + 3):
+                        if (r, c) in candidates and c != j:
+                            candidates[(r, c)].discard(candidate)
     return board, candidates
 
 #updates candidates in a cell's row/col/box after that cell has been changed
