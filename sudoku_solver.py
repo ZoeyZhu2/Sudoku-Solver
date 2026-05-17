@@ -1,14 +1,4 @@
-# sudoku_board = [
-#     [0,0,0,0,0,0,0,0,0], 
-#     [0,0,0,0,0,0,0,0,0], 
-#     [0,0,0,0,0,0,0,0,0], 
-#     [0,0,0,0,0,0,0,0,0], 
-#     [0,0,0,0,0,0,0,0,0], 
-#     [0,0,0,0,0,0,0,0,0], 
-#     [0,0,0,0,0,0,0,0,0], 
-#     [0,0,0,0,0,0,0,0,0], 
-#     [0,0,0,0,0,0,0,0,0]
-# ]
+from itertools import combinations
 
 sudoku_board = [
     [5, 3, 0, 0, 7, 0, 0, 0, 0],
@@ -162,6 +152,8 @@ def updateBoard(board, candidates):
     new_board, new_candidates = hidden_pairs(new_board, new_candidates)
 
     #pointing pairs: if a candidate IN A BOX only appears in ONE row or col IN THAT BOX, it can be eliminated from that row/col outside of the box
+    new_board, new_candidates = pointing_pairs(new_board, new_candidates)
+
     #naked triples: three cells in a unit share the same 3 candidates
     #box line reduction: if a candidate IN A ROW/COL only appears in ONE box IN THE ROW/COL, it can be eliminated from that box outside of the ROW/COL
     #X-wing: only two cells for a candidate in two diff rows/cols, and they appear in the same cols/rows, then the candidate can be eliminated from the rest of the cols outside the rows or rows outside of the cols
@@ -377,6 +369,75 @@ def hidden_pairs(board, candidates):
                         candidates = update_candidates_around_two_in_a_box(board, candidates, cell_one[0], cell_two[0], cell_one[1], cell_two[1], cand_1, cand_2)
     return board, candidates
 
+def pointing_pairs(board, candidates):
+    for box in range(9):
+        candidate_cells = {}  # candidate -> list of cells it appears in
+        for row in range(box // 3 * 3, box // 3 * 3 + 3):
+            for col in range(box % 3 * 3, box % 3 * 3 + 3):
+                if (row, col) in candidates:
+                    for candidate in candidates[(row,col)]:
+                        if candidate in candidate_cells:
+                            candidate_cells[candidate].append((row, col))
+                        else:
+                            candidate_cells[candidate] = [(row,col)]
+        for candidate in candidate_cells:
+            cells = candidate_cells[candidate]
+            if len(cells) <= 3:  # only 2 or 3 cells can form a pointing pair
+                rows = list()
+                cols = list()
+                for i in range(len(cells)):
+                    rows.append(cells[i][0])
+                    cols.append(cells[i][1])
+                r = rows[0]
+                c = cols[0]
+                same_row = True
+                same_col = True
+                for rs in rows:
+                    if rs != r:
+                        same_row = False
+                for cs in cols:
+                    if cs != c:
+                        same_col = False
+                if same_row == True:
+                    for col in range(9):
+                        if col < box % 3 * 3 or col >= box % 3 * 3 + 3:  # outside the box
+                            if (r, col) in candidates:
+                                candidates[(r, col)].discard(candidate)
+
+                if same_col == True:
+                    for row in range(9):
+                        if row < box // 3 * 3 or row >= box // 3 * 3 + 3:  # outside the box
+                            if (row, c) in candidates:
+                                candidates[(row, c)].discard(candidate)
+    return board, candidates
+
+def naked_triples(board, candidates):
+    #rows
+    for row in range(9):
+        potential_cells = [(row, col) for col in range(9) if (row, col) in candidates and len(candidates[(row,col)]) <= 3]
+        for (c1, c2, c3) in combinations(potential_cells, 3):
+            union = candidates[c1] | candidates[c2] | candidates[c3]
+            if len(union) == 3:
+                val_one, val_two, val_three = union
+                candidates = update_candidates_around_three_in_a_row(board, candidates, row, c1[1], c2[1], c3[1], val_one, val_two, val_three)
+    #columns
+    for col in range(9):
+        potential_cells = [(row, col) for row in range(9) if (row, col) in candidates and len(candidates[(row,col)]) <= 3]
+        for (c1, c2, c3) in combinations(potential_cells, 3):
+            union = candidates[c1] | candidates[c2] | candidates[c3]
+            if len(union) == 3:
+                val_one, val_two, val_three = union       
+                candidates = update_candidates_around_three_in_a_col(board, candidates, c1[0], c2[0], c3[0], col, val_one, val_two, val_three)
+    #boxes
+    for box in range(9):
+        potential_cells = [(row, col) for row in range(box // 3 * 3, box // 3 * 3 + 3) for col in range (box % 3 * 3, box % 3 * 3 + 3) if (row, col) in candidates and len(candidates[(row,col)]) <= 3]
+        for (c1, c2, c3) in combinations(potential_cells, 3):
+            union = candidates[c1] | candidates[c2] | candidates[c3]
+            if len(union) == 3:
+                val_one, val_two, val_three = union       
+                candidates = update_candidates_around_three_in_a_box(board, candidates, c1[0], c2[0], c3[0], c1[1], c2[1], c3[1], val_one, val_two, val_three)
+    return board, candidates
+
 #updates candidates in a cell's row/col/box after that cell has been changed
 def update_candidates_around_one(board, candidates, i, j, val):
     #update row
@@ -423,6 +484,40 @@ def update_candidates_around_two_in_a_box(board, candidates, i_one, i_two, j_one
                 if (row, col) != (i_one, j_one) and (row, col) != (i_two, j_two):
                     candidates[(row,col)].discard(val_one)
                     candidates[(row,col)].discard(val_two)
+    return candidates
+
+#updates candidates in a cell's row/box given a triple in a row
+def update_candidates_around_three_in_a_row(board, candidates, i, j_one, j_two, j_three, val_one, val_two, val_three):
+    #update row
+    for col in range(9):
+        if (i, col) in candidates:
+            if col != j_one and col != j_two and col != j_three:
+                candidates[(i,col)].discard(val_one)
+                candidates[(i,col)].discard(val_two)
+                candidates[(i,col)].discard(val_three)
+    return candidates
+
+#updates candidates in a cell's col/box given a triple in a col
+def update_candidates_around_three_in_a_col(board, candidates, i_one, i_two, i_three, j, val_one, val_two, val_three):
+    #update col
+    for row in range(9):
+        if (row, j) in candidates:
+            if row != i_one and row != i_two and row != i_three:
+                candidates[(row, j)].discard(val_one)
+                candidates[(row, j)].discard(val_two)
+                candidates[(row, j)].discard(val_three)
+    return candidates
+
+#updates candidates in a cell's box given a pair in a box
+def update_candidates_around_three_in_a_box(board, candidates, i_one, i_two, i_three, j_one, j_two, j_three, val_one, val_two, val_three):
+    #update box
+    for row in range(i_one // 3 * 3, i_one // 3 * 3 + 3):
+        for col in range(j_one // 3 * 3, j_one // 3 * 3 + 3):
+            if (row, col) in candidates:
+                if (row, col) != (i_one, j_one) and (row, col) != (i_two, j_two) and (row,col) != (i_three, j_three):
+                    candidates[(row,col)].discard(val_one)
+                    candidates[(row,col)].discard(val_two)
+                    candidates[(row,col)].discard(val_three)
     return candidates
 
 print(solve(sudoku_board))
