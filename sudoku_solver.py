@@ -147,7 +147,7 @@ def updateBoard(board, candidates):
     new_board = [row[:] for row in board]
     new_candidates = {key: set(value) for key, value in candidates.items()}
 
-    #solving in order of complexity
+    #solving in a chiastic order of complexity from simple -> complex -> simple
     #naked singles: only one candidate
     new_board, new_candidates = naked_singles(new_board, new_candidates)
 
@@ -155,7 +155,12 @@ def updateBoard(board, candidates):
     new_board, new_candidates = hidden_singles(new_board, new_candidates)
 
     #naked pairs: remove candidates if there's two cells with the same 2 candidates
+    new_board, new_candidates = naked_pairs(new_board, new_candidates)
+    #Question: should I be checking for naked and hidden signles after each new strategy?
+
     #hidden pairs: two numbers only appear in two cells within a unit, so all other candidates in those cells can be eliminated
+    new_board, new_candidates = hidden_pairs(new_board, new_candidates)
+
     #pointing pairs: if a candidate IN A BOX only appears in ONE row or col IN THAT BOX, it can be eliminated from that row/col outside of the box
     #naked triples: three cells in a unit share the same 3 candidates
     #box line reduction: if a candidate IN A ROW/COL only appears in ONE box IN THE ROW/COL, it can be eliminated from that box outside of the ROW/COL
@@ -176,13 +181,13 @@ def naked_singles(board, candidates):
                     board[i][j] = next(iter(candidates[(i,j)]))
                     del candidates[(i,j)]
                     #now update candidates around
-                    candidates = update_candidates_around(board, candidates, i, j, board[i][j])
+                    candidates = update_candidates_around_one(board, candidates, i, j, board[i][j])
     return board, candidates
 
 def hidden_singles(board, candidates):
     #will have to check separately for rows, cols, and boxes
     #making a new dict where the candidate values are the keys
-    nums = {}
+    nums = {} #candidate -> frequency
 
     #check rows
     for row in range(9):
@@ -198,7 +203,7 @@ def hidden_singles(board, candidates):
                 (i, j) = next(iter(nums[num]))
                 board[i][j] = num
                 del candidates[(i,j)]
-                candidates = update_candidates_around(board, candidates, i, j, num)
+                candidates = update_candidates_around_one(board, candidates, i, j, num)
     #check cols
     for col in range(9):
         #adding keys 1-9
@@ -213,7 +218,7 @@ def hidden_singles(board, candidates):
                 (i, j) = next(iter(nums[num]))
                 board[i][j] = num
                 del candidates[(i,j)]
-                candidates = update_candidates_around(board, candidates, i, j, num)
+                candidates = update_candidates_around_one(board, candidates, i, j, num)
         
     #check boxes
     # 0 1 2
@@ -233,12 +238,147 @@ def hidden_singles(board, candidates):
                 (i, j) = next(iter(nums[num]))
                 board[i][j] = num
                 del candidates[(i,j)]
-                candidates = update_candidates_around(board, candidates, i, j, num)
+                candidates = update_candidates_around_one(board, candidates, i, j, num)
     return board, candidates
 
+def naked_pairs(board, candidates):
+    #create a set called keys with tuples of candidates
+    #only add boxes with two candidates
+    #see if any keys in keys have exactly 2 boxes
+    #must check every row, column, and box
+    #check rows
+    for row in range(9):
+        keys = {} #candidate -> location
+        for col in range(9):
+            #adding all cells with two candidates into dict keys
+            if (row, col) in candidates:
+                if len(candidates[(row,col)]) == 2:
+                    key = frozenset(candidates[(row, col)])
+                    if key in keys:
+                            keys[key].append((row, col))
+                    else:
+                        keys[key] = [(row, col)]
+        for key, cells in keys.items():
+            #seeing if there are two cells with the same two candidates
+            if len(cells) == 2:
+                cell_one, cell_two = cells
+                p, q = key
+                candidates = update_candidates_around_two_in_a_row(board, candidates, row, cell_one[1], cell_two[1], p, q)       
+    #check columns
+    for col in range(9):
+        keys = {} #candidate -> location
+        for row in range(9):
+            #adding all cells with two candidates into dict keys
+            if (row, col) in candidates:
+                if len(candidates[(row, col)]) == 2:
+                    key = frozenset(candidates[(row, col)])
+                    if key in keys:
+                            keys[key].append((row, col))
+                    else:
+                        keys[key] = [(row, col)]
+        for key, cells in keys.items():
+            #seeing if there are two cells with the same two candidates
+            if len(cells) == 2:
+                cell_one, cell_two = cells
+                p, q = key
+                candidates = update_candidates_around_two_in_a_col(board, candidates, cell_one[0], cell_two[0], col, p, q)       
+    #check boxes
+    for box in range (9):
+        keys = {}
+        for row in range(box // 3 * 3, box // 3 * 3+ 3):
+            for col in range(box % 3 * 3, box % 3 * 3+ 3):
+            #adding all cells with two candidates into dict keys
+                if (row, col) in candidates:
+                    if len(candidates[(row, col)]) == 2:
+                        key = frozenset(candidates[(row, col)])
+                        if key in keys:
+                            keys[key].append((row, col))
+                        else:
+                            keys[key] = [(row, col)]
+        for key, cells in keys.items():
+            #seeing if there are two cells with the same two candidates
+            if len(cells) == 2:
+                cell_one, cell_two = cells
+                p, q = key
+                candidates = update_candidates_around_two_in_a_row(board, candidates, row, cell_one[1], cell_two[1], p, q)       
+    return board, candidates
+
+def hidden_pairs(board, candidates):
+    #if nothing else can be two candidates except in two cells
+    #add all potential candidates to a dict and count times they appear so candidate:frequency
+    #then locate the two cells with the two candidates if possible
+    #rows
+    for row in range(9):
+        candidate_cells = {}  # candidate -> list of cells it appears in
+        for col in range(9):
+            if (row, col) in candidates:
+                for candidate in candidates[(row,col)]:
+                    if candidate in candidate_cells:
+                        candidate_cells[candidate].append((row, col))
+                    else:
+                        candidate_cells[candidate] = [(row,col)]
+        twice = {candidate: cells for candidate, cells in candidate_cells.items() if len(cells) == 2}
+        #make a dictionary candidate -> cells if the length of the candidate locations is 2
+        #candidate_cells.items() returns a tuple (candidate, list of cells)
+        for cand_1 in twice:
+            for cand_2 in twice:
+                if cand_1 < cand_2: #avoid duplicates
+                    if twice[cand_1] == twice[cand_2]: #since the order of the location tuples will be the same
+                    #update candidates
+                        cell_one, cell_two = twice[cand_1]
+                        candidates[cell_one] = {cand_1, cand_2}
+                        candidates[cell_two] = {cand_1, cand_2}
+                        candidates = update_candidates_around_two_in_a_row(board, candidates, row, cell_one[1], cell_two[1], cand_1, cand_2)
+
+    #columns
+    for col in range(9):
+        candidate_cells = {}  # candidate -> list of cells it appears in
+        for row in range(9):
+            if (row, col) in candidates:
+                for candidate in candidates[(row,col)]:
+                    if candidate in candidate_cells:
+                        candidate_cells[candidate].append((row, col))
+                    else:
+                        candidate_cells[candidate] = [(row,col)]
+        twice = {candidate: cells for candidate, cells in candidate_cells.items() if len(cells) == 2}
+        #make a dictionary candidate -> cells if the length of the candidate locations is 2
+        #candidate_cells.items() returns a tuple (candidate, list of cells)
+        for cand_1 in twice:
+            for cand_2 in twice:
+                if cand_1 < cand_2: #avoid duplicates
+                    if twice[cand_1] == twice[cand_2]: #since the order of the location tuples will be the same
+                    #update candidates
+                        cell_one, cell_two = twice[cand_1]
+                        candidates[cell_one] = {cand_1, cand_2}
+                        candidates[cell_two] = {cand_1, cand_2}
+                        candidates = update_candidates_around_two_in_a_col(board, candidates, cell_one[0], cell_two[0], col, cand_1, cand_2)
+    #boxes
+    for box in range(9):
+        candidate_cells = {}  # candidate -> list of cells it appears in
+        for row in range(box // 3 * 3, box // 3 * 3 + 3):
+            for col in range(box % 3 * 3, box % 3 * 3 + 3):
+                if (row, col) in candidates:
+                    for candidate in candidates[(row,col)]:
+                        if candidate in candidate_cells:
+                            candidate_cells[candidate].append((row, col))
+                        else:
+                            candidate_cells[candidate] = [(row,col)]
+        twice = {candidate: cells for candidate, cells in candidate_cells.items() if len(cells) == 2}
+        #make a dictionary candidate -> cells if the length of the candidate locations is 2
+        #candidate_cells.items() returns a tuple (candidate, list of cells)
+        for cand_1 in twice:
+            for cand_2 in twice:
+                if cand_1 < cand_2: #avoid duplicates
+                    if twice[cand_1] == twice[cand_2]: #since the order of the location tuples will be the same
+                    #update candidates
+                        cell_one, cell_two = twice[cand_1]
+                        candidates[cell_one] = {cand_1, cand_2}
+                        candidates[cell_two] = {cand_1, cand_2}
+                        candidates = update_candidates_around_two_in_a_box(board, candidates, cell_one[0], cell_two[0], cell_one[1], cell_two[1], cand_1, cand_2)
+    return board, candidates
 
 #updates candidates in a cell's row/col/box after that cell has been changed
-def update_candidates_around(board, candidates, i, j, val):
+def update_candidates_around_one(board, candidates, i, j, val):
     #update row
     for col in range(9):
         if (i, col) in candidates:
@@ -254,13 +394,50 @@ def update_candidates_around(board, candidates, i, j, val):
                 candidates[(row,col)].discard(val)
     return candidates
 
+#updates candidates in a cell's row/box given a pair in a row
+def update_candidates_around_two_in_a_row(board, candidates, i, j_one, j_two, val_one, val_two):
+    #update row
+    for col in range(9):
+        if (i, col) in candidates:
+            if col != j_one and col != j_two:
+                candidates[(i,col)].discard(val_one)
+                candidates[(i,col)].discard(val_two)
+    return candidates
+
+#updates candidates in a cell's col/box given a pair in a col
+def update_candidates_around_two_in_a_col(board, candidates, i_one, i_two, j, val_one, val_two):
+    #update col
+    for row in range(9):
+        if (row, j) in candidates:
+            if row != i_one and row != i_two:
+                candidates[(row, j)].discard(val_one)
+                candidates[(row, j)].discard(val_two)
+    return candidates
+
+#updates candidates in a cell's box given a pair in a box
+def update_candidates_around_two_in_a_box(board, candidates, i_one, i_two, j_one, j_two, val_one, val_two):
+    #update box
+    for row in range(i_one // 3 * 3, i_one // 3 * 3 + 3):
+        for col in range(j_one // 3 * 3, j_one // 3 * 3 + 3):
+            if (row, col) in candidates:
+                if (row, col) != (i_one, j_one) and (row, col) != (i_two, j_two):
+                    candidates[(row,col)].discard(val_one)
+                    candidates[(row,col)].discard(val_two)
+    return candidates
+
 print(solve(sudoku_board))
 
 #Next Steps:
 #add all sudoku solving strategies
 #add a method checking if a sudoku board is solvable
+#add a method creating a solvable sudoku board
+#make methods creating solvable sudoku boards of diff difficultires
 #add a method that takes in a sudoku board
 #create a GUI to input a sudoku board
+#create a GUI to solve sudoku boards
 #make a solve method that shows each step as it is solved
 #make this solve method pausable so I can go step by step for hints with arrows walking through steps. Think Chess.com strategy walk throughs
 #add another gamemode where it creates sudoku boards of varying difficulty for you to solve
+#so will have two modes: 1 to get the solution to an external sudoku board, another to solve the sudoku on the website and i can get hints and check with the solve method
+#hints will highlight the square, show next number will fill in a number
+
