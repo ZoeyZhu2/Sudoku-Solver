@@ -164,6 +164,8 @@ def updateBoard(board, candidates):
     new_board, new_candidates = x_wing(new_board, new_candidates)
 
     #Swordfish: only two cells for a candidate in 3 diff rows/cols, and they appear in the same 3 cols/rows, then the candidate can be eliminated from the rest of the cols outside of the rows or the rows outside of the cols
+    new_board, new_candidates = swordfish(new_board, new_candidates)
+    
     #XY-wing: a cell containing two values intersects two other cells each containing a value from the middle cell and a shared third value (each cell has 2 values). Then everything else in the units of the two wing cells cannot contain the value shared by the wing cells. 
 
     return new_board, new_candidates
@@ -531,6 +533,48 @@ def x_wing(board, candidates):
                             candidates[(row, col)].discard(key)
     return board, candidates
 
+#Swordfish: only two cells for a candidate in 3 diff rows/cols, and they appear in the same 3 cols/rows, then the candidate can be eliminated from the rest of the cols outside of the rows or the rows outside of the cols
+def swordfish(board, candidates):
+    #the same candidate needs to cover 3 rows and 3 columns
+    potential_total = {} #candidate -> cells
+    for row in range(9):
+        potential_row = {} #candidate -> cells
+        for col in range(9):
+            if (row, col) in candidates:
+                for candidate in candidates[(row,col)]:
+                    if candidate in potential_row:
+                        potential_row[candidate].append((row,col))
+                    else:
+                        potential_row[candidate] = [(row,col)]
+        maybe = {candidate: cells for candidate, cells in potential_row.items() if len(cells) >= 2 and len(cells) <= 3}
+        for key in maybe:
+            if key in potential_total:
+                potential_total[key].extend(maybe[key])
+            else:
+                potential_total[key] = maybe[key]
+    maybe_total = {candidate: cells for candidate, cells in potential_total.items() if len(cells) >= 6 and len(cells) <= 9}
+    for key in maybe_total:
+        rows = set()
+        cols = set()
+        for (i, j) in maybe_total[key]:
+            rows.add(i)
+            cols.add(j)
+        if len(rows) == 3 and len(cols) == 3:
+            j_one, j_two, j_three = cols
+            i_one, i_two, i_three = rows
+            for row in [i_one, i_two, i_three]:
+                for col in range(9):
+                    if col != j_one and col != j_two and col != j_three:
+                        if (row, col) in candidates:
+                            candidates[(row, col)].discard(key)
+            for col in [j_one, j_two, j_three]:
+                for row in range(9):
+                    if row != i_one and row != i_two and row != i_three:
+                        if (row, col) in candidates:
+                            candidates[(row, col)].discard(key)
+    return board, candidates
+
+#XY-wing: a cell containing two values intersects two other cells each containing a value from the middle cell and a shared third value (each cell has 2 values). Then everything else in the units of the two wing cells cannot contain the value shared by the wing cells. 
 #updates candidates in a cell's row/col/box after that cell has been changed
 def update_candidates_around_one(board, candidates, i, j, val):
     #update row
