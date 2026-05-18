@@ -161,6 +161,8 @@ def updateBoard(board, candidates):
     new_board, new_candidates = box_line_reduction(new_board, new_candidates)
 
     #X-wing: only two cells for a candidate in two diff rows/cols, and they appear in the same cols/rows, then the candidate can be eliminated from the rest of the cols outside the rows or rows outside of the cols
+    new_board, new_candidates = x_wing(new_board, new_candidates)
+
     #Swordfish: only two cells for a candidate in 3 diff rows/cols, and they appear in the same 3 cols/rows, then the candidate can be eliminated from the rest of the cols outside of the rows or the rows outside of the cols
     #XY-wing: a cell containing two values intersects two other cells each containing a value from the middle cell and a shared third value (each cell has 2 values). Then everything else in the units of the two wing cells cannot contain the value shared by the wing cells. 
 
@@ -296,7 +298,7 @@ def naked_pairs(board, candidates):
             if len(cells) == 2:
                 cell_one, cell_two = cells
                 p, q = key
-                candidates = update_candidates_around_two_in_a_row(board, candidates, row, cell_one[1], cell_two[1], p, q)       
+                candidates = update_candidates_around_two_in_a_box(board, candidates, cell_one[0], cell_two[0], cell_one[1], cell_two[1], p, q)       
     return board, candidates
 
 def hidden_pairs(board, candidates):
@@ -443,7 +445,7 @@ def naked_triples(board, candidates):
                 candidates = update_candidates_around_three_in_a_box(board, candidates, c1[0], c2[0], c3[0], c1[1], c2[1], c3[1], val_one, val_two, val_three)
     return board, candidates
 
-    #box line reduction: if a candidate IN A ROW/COL only appears in ONE box IN THE ROW/COL, it can be eliminated from that box outside of the ROW/COL
+    #box line reduction: if a candidate IN A ROW/COL only appears in ONE box IN THE ROW/COL, it can be eliminated from that BOX outside of the ROW/COL
 def box_line_reduction(board, candidates):
     #check row
     for row in range(9):
@@ -488,6 +490,45 @@ def box_line_reduction(board, candidates):
                     for c in range(j // 3 * 3, j // 3 * 3 + 3):
                         if (r, c) in candidates and c != j:
                             candidates[(r, c)].discard(candidate)
+    return board, candidates
+
+#X-wing: only two cells for a candidate in two diff rows/cols, and they appear in the same cols/rows, then the candidate can be eliminated from the rest of the cols outside the rows or rows outside of the cols
+def x_wing(board, candidates):
+    #see if a candidate appears in (i1, j1), (i1, j2), (i2,j1), (i2,j2)
+    #then eliminate from rows i1, i2, and cols j1, j2
+    potential_total = {} #candidate -> cells
+    for row in range(9):
+        potential_row = {} #candidate -> cells
+        for col in range(9):
+            if (row, col) in candidates:
+                for candidate in candidates[(row,col)]:
+                    if candidate in potential_row:
+                        potential_row[candidate].append((row,col))
+                    else:
+                        potential_row[candidate] = [(row,col)]
+        twice = {candidate: cells for candidate, cells in potential_row.items() if len(cells) == 2}
+        for key in twice:
+            if key in potential_total:
+                potential_total[key].extend(twice[key])
+            else:
+                potential_total[key] = twice[key]
+    four_times = {candidate: cells for candidate, cells in potential_total.items() if len(cells) == 4}
+    for key in four_times:
+        cols = set(cell[1] for cell in four_times[key])
+        rows = set(cell[0] for cell in four_times[key])
+        if len(cols) == 2 and len(rows) == 2:  # exactly 2 rows and 2 cols = X-wing!
+            j_one, j_two = cols
+            i_one, i_two = rows
+            for row in [i_one, i_two]:
+                for col in range(9):
+                    if col != j_one and col != j_two:
+                        if (row, col) in candidates:
+                            candidates[(row, col)].discard(key)
+            for col in [j_one, j_two]:
+                for row in range(9):
+                    if row != i_one and row != i_two:
+                        if (row, col) in candidates:
+                            candidates[(row, col)].discard(key)
     return board, candidates
 
 #updates candidates in a cell's row/col/box after that cell has been changed
