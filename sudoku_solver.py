@@ -167,6 +167,7 @@ def updateBoard(board, candidates):
     new_board, new_candidates = swordfish(new_board, new_candidates)
     
     #XY-wing: a cell containing two values intersects two other cells each containing a value from the middle cell and a shared third value (each cell has 2 values). Then everything else in the units of the two wing cells cannot contain the value shared by the wing cells. 
+    new_board, new_candidates = xy_wing(new_board, new_candidates)
 
     return new_board, new_candidates
         
@@ -574,7 +575,56 @@ def swordfish(board, candidates):
                             candidates[(row, col)].discard(key)
     return board, candidates
 
-#XY-wing: a cell containing two values intersects two other cells each containing a value from the middle cell and a shared third value (each cell has 2 values). Then everything else in the units of the two wing cells cannot contain the value shared by the wing cells. 
+#XY-wing: only works for cells with two candidates. Take "pivot" cell that sees cells 1 and 2. Cells 1 and 2 each contain two candidates, B and C, and A and C. They must have candidates in common with pivot (which has, say A, B). Then any cells that see with cells 1 and 2 cannot have C.
+#see: share row/col/box with a cell
+def xy_wing(board, candidates):
+    #finding all cells with two candidates
+    two_candidates = {} #location -> the two candidates
+    for (row,col) in candidates:
+        if len(candidates[(row, col)] == 2):
+            two_candidates[(row, col)] = candidates[(row, col)]
+    #finding all pivots
+    for (row, col) in two_candidates:
+        sees = {} #location -> two candidates
+        for (i, j) in two_candidates:
+            if row != i or col != j:
+            #same row?
+                if row == i:
+                    sees[(i,j)] = two_candidates[(i,j)]
+            #same col?
+                if col == j:
+                    sees[(i, j)] = two_candidates[(i, j)]
+            #same box?
+                elif row // 3 == i // 3 and col // 3 == j // 3:
+                    sees[(i, j)] = two_candidates[(i, j)]
+        #seeing if (row, col) is actually a pivot
+        A, B = two_candidates[(row, col)]
+        #deleting all nonviable wings
+        if len(sees) >= 2:
+            for (i, j) in sees:
+                cand_one, cand_two = sees[(i,j)]
+                if cand_one != A and cand_two != B:
+                    del sees[(i, j)]
+        if len(sees) >= 2:
+            for (i_one, j_one) in sees:
+                cand_one1, cand_two1 = sees[(i_one,j_one)]
+                for (i_two, j_two) in sees:
+                    cand_one2, cand_two2 = sees[(i_two, j_two)]
+                    if i_one != i_two or j_one != j_two:
+                        #check for valid wings:
+                        if cand_one1 == cand_one2 or cand_one1 == cand_two2:
+                            #remove cand_one1 from all cells that see i_one, j_one and i_two, j_two
+                            #no need to worry about if the wings can see each other because that would be a naked pair?
+                            candidates = update_candidates_around_one(board, candidates, i_one, j_one, cand_one1)
+                            candidates = update_candidates_around_one(board, candidates, i_two, j_two, cand_one1)
+                        elif cand_two1 == cand_one2 or cand_two1 == cand_two2:
+                            #remove cand_two1 from all cells that see i_one, j_one and i_two, j_two
+                            candidates = update_candidates_around_one(board, candidates, i_one, j_one, cand_two1)
+                            candidates = update_candidates_around_one(board, candidates, i_two, j_two, cand_two1)
+
+
+    return board, candidates
+
 #updates candidates in a cell's row/col/box after that cell has been changed
 def update_candidates_around_one(board, candidates, i, j, val):
     #update row
