@@ -67,15 +67,14 @@ def check_cols(board):
 
 
 def check_boxes(board):
-    for x in range(3):
-        for i in range(x * 3, x * 3 + 3):
-            nums = set()
-            for y in range (3):
-                for j in range(y * 3, y * 3 + 3):
-                    if board[i][j] == 0:
-                        return False
-                    else:
-                        nums.add(board[i][j])
+    for box in range(9):
+        nums = set()
+        for row in range(box // 3 * 3, box // 3 * 3 + 3):
+            for col in range(box % 3 * 3, box % 3 * 3 + 3):
+                if board[row][col] == 0:
+                    return False
+                else:
+                    nums.add(board[row][col])
         if len(nums) != 9:
             return False
     return True
@@ -96,8 +95,9 @@ def solve(board):
     new_board = [row[:] for row in board]
     while check(new_board) == False:
         old_board = [row[:] for row in new_board]
+        old_candidates = old_candidates = {k: set(v) for k, v in candidates.items()}
         new_board, candidates = updateBoard(new_board, candidates)
-        if old_board == new_board:
+        if old_board == new_board and old_candidates == candidates:
             return "stuck"
     return new_board
 
@@ -460,7 +460,7 @@ def box_line_reduction(board, candidates):
                         candidate_cells[candidate].append((row, col))
                     else:
                         candidate_cells[candidate] = [(row,col)]
-        potential = {candidate: cells for candidate, cells in candidate_cells.items() if len(cells) <= 2}
+        potential = {candidate: cells for candidate, cells in candidate_cells.items() if len(cells) <= 3}
         #if cells are all in the same box
         for candidate, cells in potential.items():
             boxes = set(cell[1] // 3 for cell in cells) 
@@ -581,7 +581,7 @@ def xy_wing(board, candidates):
     #finding all cells with two candidates
     two_candidates = {} #location -> the two candidates
     for (row,col) in candidates:
-        if len(candidates[(row, col)] == 2):
+        if len(candidates[(row, col)]) == 2:
             two_candidates[(row, col)] = candidates[(row, col)]
     #finding all pivots
     for (row, col) in two_candidates:
@@ -598,31 +598,52 @@ def xy_wing(board, candidates):
                 elif row // 3 == i // 3 and col // 3 == j // 3:
                     sees[(i, j)] = two_candidates[(i, j)]
         #seeing if (row, col) is actually a pivot
-        A, B = two_candidates[(row, col)]
+        pivot_cands = two_candidates[(row, col)]
         #deleting all nonviable wings
+        new_sees = {}
         if len(sees) >= 2:
             for (i, j) in sees:
-                cand_one, cand_two = sees[(i,j)]
-                if cand_one != A and cand_two != B:
-                    del sees[(i, j)]
-        if len(sees) >= 2:
-            for (i_one, j_one) in sees:
-                cand_one1, cand_two1 = sees[(i_one,j_one)]
-                for (i_two, j_two) in sees:
-                    cand_one2, cand_two2 = sees[(i_two, j_two)]
+                shared = sees[(i,j)] & pivot_cands #set intersection
+                if len(shared) == 1:
+                    new_sees[(i,j)] = sees[(i,j)]
+        if len(new_sees) >= 2:
+            for (i_one, j_one) in new_sees:
+                for (i_two, j_two) in new_sees:
                     if i_one != i_two or j_one != j_two:
                         #check for valid wings:
-                        if cand_one1 == cand_one2 or cand_one1 == cand_two2:
-                            #remove cand_one1 from all cells that see i_one, j_one and i_two, j_two
-                            #no need to worry about if the wings can see each other because that would be a naked pair?
-                            candidates = update_candidates_around_one(board, candidates, i_one, j_one, cand_one1)
-                            candidates = update_candidates_around_one(board, candidates, i_two, j_two, cand_one1)
-                        elif cand_two1 == cand_one2 or cand_two1 == cand_two2:
-                            #remove cand_two1 from all cells that see i_one, j_one and i_two, j_two
-                            candidates = update_candidates_around_one(board, candidates, i_one, j_one, cand_two1)
-                            candidates = update_candidates_around_one(board, candidates, i_two, j_two, cand_two1)
-
-
+                        wing_set = new_sees[(i_one, j_one)] & new_sees[(i_two, j_two)]
+                        if len(wing_set) == 1 and not (wing_set & pivot_cands):                            #remove cand_one1 from all cells that see i_one, j_one AND i_two, j_two
+                            val = next(iter(wing_set))
+                            #make list of all valid cells
+                            valid = {} #location -> candidates
+                            for i in range(9):
+                                for j in range(9):
+                                    sees_one = False
+                                    sees_two = False
+                                    if (i, j) in candidates:
+                                        if (i != i_one or j != j_one) and (i != i_two or j != j_two):
+                                            #same row?
+                                            if i == i_one:
+                                                sees_one = True
+                                            #same col?
+                                            elif j == j_one:
+                                                sees_one = True
+                                            #same box?
+                                            elif i // 3 == i_one // 3 and j // 3 == j_one // 3:
+                                                sees_one = True
+                                            #same row?
+                                            if i == i_two:
+                                                sees_two = True
+                                            #same col?
+                                            elif j == j_two:
+                                                sees_two = True
+                                            #same box?
+                                            elif i // 3 == i_two // 3 and j // 3 == j_two // 3:
+                                                sees_two = True
+                                        if sees_one == True and sees_two == True:
+                                            valid[(i,j)] = candidates[(i, j)]
+                            for (i, j) in valid:
+                                candidates[(i, j)].discard(val)
     return board, candidates
 
 #updates candidates in a cell's row/col/box after that cell has been changed
