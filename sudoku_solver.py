@@ -93,12 +93,9 @@ def solve(board):
                 candidates = update_candidates_cell(board, candidates, i, j)
 
     new_board = [row[:] for row in board]
-    while check(new_board) == False:
-        old_board = [row[:] for row in new_board]
-        old_candidates = old_candidates = {k: set(v) for k, v in candidates.items()}
-        new_board, candidates = updateBoard(new_board, candidates)
-        if old_board == new_board and old_candidates == candidates:
-            return "stuck"
+    new_board, candidates = updateBoard(new_board, candidates)
+    if check(new_board) == False:
+        return "stuck"
     return new_board
 
 #updates candidates for a particular cell.
@@ -137,38 +134,56 @@ def updateBoard(board, candidates):
     new_board = [row[:] for row in board]
     new_candidates = {key: set(value) for key, value in candidates.items()}
 
-    #solving in a chiastic order of complexity from simple -> complex -> simple
-    #naked singles: only one candidate
-    new_board, new_candidates = naked_singles(new_board, new_candidates)
+    updated = True
 
-    #hidden singles: a number can only go in one cell in a row/column/box, even if that cell has multiple candidates
-    new_board, new_candidates = hidden_singles(new_board, new_candidates)
-
-    #naked pairs: remove candidates if there's two cells with the same 2 candidates
-    new_board, new_candidates = naked_pairs(new_board, new_candidates)
-    #Question: should I be checking for naked and hidden signles after each new strategy?
-
-    #hidden pairs: two numbers only appear in two cells within a unit, so all other candidates in those cells can be eliminated
-    new_board, new_candidates = hidden_pairs(new_board, new_candidates)
-
-    #pointing pairs: if a candidate IN A BOX only appears in ONE row or col IN THAT BOX, it can be eliminated from that row/col outside of the box
-    new_board, new_candidates = pointing_pairs(new_board, new_candidates)
-
-    #naked triples: three cells in a unit share the same 3 candidates
-    new_board, new_candidates = naked_triples(new_board, new_candidates)
-
-    #box line reduction: if a candidate IN A ROW/COL only appears in ONE box IN THE ROW/COL, it can be eliminated from that box outside of the ROW/COL
-    new_board, new_candidates = box_line_reduction(new_board, new_candidates)
-
-    #X-wing: only two cells for a candidate in two diff rows/cols, and they appear in the same cols/rows, then the candidate can be eliminated from the rest of the cols outside the rows or rows outside of the cols
-    new_board, new_candidates = x_wing(new_board, new_candidates)
-
-    #Swordfish: only two cells for a candidate in 3 diff rows/cols, and they appear in the same 3 cols/rows, then the candidate can be eliminated from the rest of the cols outside of the rows or the rows outside of the cols
-    new_board, new_candidates = swordfish(new_board, new_candidates)
-    
-    #XY-wing: a cell containing two values intersects two other cells each containing a value from the middle cell and a shared third value (each cell has 2 values). Then everything else in the units of the two wing cells cannot contain the value shared by the wing cells. 
-    new_board, new_candidates = xy_wing(new_board, new_candidates)
-
+    while (updated):
+        old_candidates = {key: set(value) for key, value in new_candidates.items()}
+        #solving in a chiastic order of complexity from simple -> complex -> simple
+        #naked singles: only one candidate
+        new_board, new_candidates = naked_singles(new_board, new_candidates)
+        old_candidates = {key: set(value) for key, value in new_candidates.items()}
+        #hidden singles: a number can only go in one cell in a row/column/box, even if that cell has multiple candidates
+        new_board, new_candidates = hidden_singles(new_board, new_candidates)
+        old_candidates = {key: set(value) for key, value in new_candidates.items()}
+        #naked pairs: remove candidates if there's two cells with the same 2 candidates
+        new_board, new_candidates = naked_pairs(new_board, new_candidates)
+        if old_candidates != new_candidates:
+            continue
+        old_candidates = {key: set(value) for key, value in new_candidates.items()}
+        #hidden pairs: two numbers only appear in two cells within a unit, so all other candidates in those cells can be eliminated
+        new_board, new_candidates = hidden_pairs(new_board, new_candidates)
+        if old_candidates != new_candidates:
+            continue
+        old_candidates = {key: set(value) for key, value in new_candidates.items()}        
+        #pointing pairs: if a candidate IN A BOX only appears in ONE row or col IN THAT BOX, it can be eliminated from that row/col outside of the box
+        new_board, new_candidates = pointing_pairs(new_board, new_candidates)
+        if old_candidates != new_candidates:
+            continue
+        old_candidates = {key: set(value) for key, value in new_candidates.items()}      
+        #naked triples: three cells in a unit share the same 3 candidates
+        new_board, new_candidates = naked_triples(new_board, new_candidates)
+        if old_candidates != new_candidates:
+            continue
+        old_candidates = {key: set(value) for key, value in new_candidates.items()}
+        #box line reduction: if a candidate IN A ROW/COL only appears in ONE box IN THE ROW/COL, it can be eliminated from that box outside of the ROW/COL
+        new_board, new_candidates = box_line_reduction(new_board, new_candidates)
+        if old_candidates != new_candidates:
+            continue
+        old_candidates = {key: set(value) for key, value in new_candidates.items()}
+        #X-wing: only two cells for a candidate in two diff rows/cols, and they appear in the same cols/rows, then the candidate can be eliminated from the rest of the cols outside the rows or rows outside of the cols
+        new_board, new_candidates = x_wing(new_board, new_candidates)
+        if old_candidates != new_candidates:
+            continue
+        old_candidates = {key: set(value) for key, value in new_candidates.items()}   
+        #Swordfish: only two cells for a candidate in 3 diff rows/cols, and they appear in the same 3 cols/rows, then the candidate can be eliminated from the rest of the cols outside of the rows or the rows outside of the cols
+        new_board, new_candidates = swordfish(new_board, new_candidates)
+        if old_candidates != new_candidates:
+            continue
+        old_candidates = {key: set(value) for key, value in new_candidates.items()}
+        #XY-wing: a cell containing two values intersects two other cells each containing a value from the middle cell and a shared third value (each cell has 2 values). Then everything else in the units of the two wing cells cannot contain the value shared by the wing cells. 
+        new_board, new_candidates = xy_wing(new_board, new_candidates)
+        if old_candidates == new_candidates:
+            updated = False
     return new_board, new_candidates
         
 #solves for naked singles in place, which is okay becuase I put new_board and new_candidates in as parameters
@@ -731,7 +746,6 @@ def update_candidates_around_three_in_a_box(board, candidates, i_one, i_two, i_t
 print(solve(sudoku_board))
 
 #Next Steps:
-#add all sudoku solving strategies
 #add a method checking if a sudoku board is solvable
 #add a method creating a solvable sudoku board
 #make methods creating solvable sudoku boards of diff difficultires
