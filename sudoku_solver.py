@@ -844,6 +844,21 @@ def generate_board(difficulty):
             deleted += 1
     return board
 
+def input_board(board_string):
+    #input will be an 81-char string
+    board = [[0] * 9 for i in range(9)]
+    if len(input) != 81:
+        raise ValueError("Input must be 81 characters")
+    valid_values = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'} #set for fast lookup
+    for i in range(len(board_string)):
+        if board_string[i] not in valid_values:
+            raise ValueError("Invalid character")
+        board[i // 9][i % 9] = int(board_string[i])
+    if not is_solvable(board):
+        raise ValueError("Invalid board")
+    return board
+
+
 print(solve(sudoku_board))
 
 #Next Steps:
