@@ -743,6 +743,54 @@ def update_candidates_around_three_in_a_box(board, candidates, i_one, i_two, i_t
                     candidates[(row,col)].discard(val_three)
     return candidates
 
+def is_solvable(board):
+    #check for duplicate values
+    #check rows
+    for row in range(9):
+        non_zero = [board[row][col] for col in range(9) if board[row][col] != 0]
+        if len(non_zero) != len(set(non_zero)):  # duplicate detected!
+            return False
+    #check cols
+    for col in range(9):
+        non_zero = [board[row][col] for row in range(9) if board[row][col] != 0]
+        if len(non_zero) != len(set(non_zero)):  # duplicate detected!
+            return False
+    #check boxes
+    for box in range(9):
+        non_zero = [board[row][col] for row in range(box // 3 * 3, box // 3 * 3 + 3) for col in range (box % 3 * 3, box % 3 * 3 + 3) if board[row][col] != 0]
+        if len(non_zero) != len(set(non_zero)):  # duplicate detected!
+            return False
+            
+    #see if there are multiple solutions or no solution
+    copy_board = [row[:] for row in board]
+    num_solutions = count_solutions(copy_board, 0)
+    if (num_solutions != 1):
+        return False
+    return True
+
+#just checking up to 2
+def count_solutions(board, count):
+    if count >= 2: #stopping at 2
+        return count
+    i, j = 0, 0 #this will be the first empty cell
+    empty = True
+    for row in range(9):
+        for col in range(9):
+            if board[row][col] == 0:
+                empty = False
+                i, j = row, col
+                break
+        if not empty:
+            break
+    if empty == True:
+        return count + 1
+    for test in range(1, 10):
+        if is_valid(board, i, j, test):
+            board[i][j] = test
+            count = count_solutions(board, count)
+            board[i][j] = 0  #resetting board[i][j]
+    return count
+
 print(solve(sudoku_board))
 
 #Next Steps:
