@@ -1,4 +1,5 @@
 from itertools import combinations
+import random
 
 sudoku_board = [
     [5, 3, 0, 0, 7, 0, 0, 0, 0],
@@ -791,12 +792,61 @@ def count_solutions(board, count):
             board[i][j] = 0  #resetting board[i][j]
     return count
 
+def generate_solved_board():
+    board = [[0] * 9 for i in range(9)]
+    fill_board(board)
+    return board
+
+def fill_board(board):
+    empty = True
+    i, j = 0, 0
+    for row in range(9):
+        for col in range(9):
+            if board[row][col] == 0:
+                empty = False
+                i, j = row, col
+                break
+        if not empty:
+            break
+    if empty == True:
+        return True
+    nums = list(range(1, 10))
+    random.shuffle(nums)
+    for test in nums:
+        if is_valid(board, i, j, test):
+            board[i][j] = test
+            if fill_board(board):  # did it work?
+                return True
+            board[i][j] = 0
+    return False
+
+def generate_board(difficulty):
+    board = generate_solved_board()
+    num_to_delete = 0
+    if difficulty == "easy":
+        num_to_delete = 9
+    elif difficulty == "medium":
+        num_to_delete = 19
+    elif difficulty == "hard":
+        num_to_delete = 24
+    elif difficulty == "super hard":
+        num_to_delete = 29
+    deleted = 0
+    while deleted < num_to_delete:
+        row = random.randint(0, 8)
+        col = random.randint(0, 8)
+        if board[row][col] == 0:
+            continue
+        new_board = [r[:] for r in board]
+        new_board[row][col] = 0
+        if is_solvable(new_board):
+            board[row][col] = 0
+            deleted += 1
+    return board
+
 print(solve(sudoku_board))
 
 #Next Steps:
-#add a method checking if a sudoku board is solvable
-#add a method creating a solvable sudoku board
-#make methods creating solvable sudoku boards of diff difficultires
 #add a method that takes in a sudoku board
 #create a GUI to input a sudoku board
 #create a GUI to solve sudoku boards
