@@ -221,6 +221,7 @@ def hidden_singles(board, candidates, steps):
             if len(nums[num]) == 1:
                 (i, j) = next(iter(nums[num]))
                 board[i][j] = num
+                steps.append([i , j, board[i][j], "Hidden Singles"])
                 del candidates[(i,j)]
                 candidates = update_candidates_around_one(board, candidates, i, j, num)
     #check cols
@@ -236,6 +237,7 @@ def hidden_singles(board, candidates, steps):
             if len(nums[num]) == 1:
                 (i, j) = next(iter(nums[num]))
                 board[i][j] = num
+                steps.append([i , j, board[i][j], "Hidden Singles"])
                 del candidates[(i,j)]
                 candidates = update_candidates_around_one(board, candidates, i, j, num)
         
@@ -256,6 +258,7 @@ def hidden_singles(board, candidates, steps):
             if len(nums[num]) == 1:
                 (i, j) = next(iter(nums[num]))
                 board[i][j] = num
+                steps.append([i , j, board[i][j], "Hidden Singles"])
                 del candidates[(i,j)]
                 candidates = update_candidates_around_one(board, candidates, i, j, num)
     return board, candidates
