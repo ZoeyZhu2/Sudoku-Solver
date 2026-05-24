@@ -1,0 +1,218 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: #E8F4FD;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hidden { display: none; }
+
+.card {
+    background: white;
+    border-radius: 16px;
+    width: 380px;
+    overflow: hidden;
+    border: 0.5px solid #B5D4F4;
+}
+
+.header-bar {
+    background: #185FA5;
+    height: 6px;
+    width: 100%;
+}
+
+.center {
+    padding: 3rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.the {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: #888888;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+h1 {
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: #121212;
+    margin-bottom: 4px;
+}
+
+.subtitle {
+    font-size: 13px;
+    color: #999999;
+    font-style: italic;
+    margin-bottom: 2rem;
+}
+
+.divider {
+    width: 280px;
+    height: 0.5px;
+    background: #E0E0E0;
+    margin-bottom: 2rem;
+}
+
+.btn-primary {
+    width: 280px;
+    height: 48px;
+    background: #185FA5;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+}
+
+.btn-secondary {
+    width: 280px;
+    height: 48px;
+    background: white;
+    color: #185FA5;
+    font-size: 15px;
+    font-weight: 600;
+    border: 2px solid #185FA5;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 1px;
+}
+
+.btn-primary:hover { background: #0C447C; }
+.btn-secondary:hover { background: #E6F1FB; }
+
+.mode1-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    background: white;
+    border-radius: 16px;
+    border: 0.5px solid #B5D4F4;
+    width: 500px;
+}
+
+.mode1-header {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.mode1-header h2 {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: #121212;
+}
+
+.btn-back {
+    background: none;
+    border: none;
+    color: #185FA5;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.sudoku-board {
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+}
+
+.sudoku-board td {
+    width: 48px;
+    height: 48px;
+    text-align: center;
+    vertical-align: middle;
+    border: 0.5px solid #B5D4F4;
+    font-size: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #121212;
+    caret-color: transparent;
+    outline: none;
+    user-select: none;
+}
+
+
+.sudoku-board .selected {
+    background-color: #A8C8E8;
+}
+
+.sudoku-board .given {
+    color: #121212;
+    font-weight: 900;
+}
+
+.sudoku-board .solved {
+    color: #185FA5;
+}
+
+/* thick borders for 3x3 boxes */
+.sudoku-board tr:nth-child(3n) td {
+    border-bottom: 2px solid #185FA5;
+}
+
+.sudoku-board td:nth-child(3n) {
+    border-right: 2px solid #185FA5;
+}
+
+.strategy-display {
+    font-size: 14px;
+    color: #666666;
+    margin-bottom: 1rem;
+    font-style: italic;
+    min-height: 20px;
+}
+
+.step-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1rem;
+}
+
+.btn-step {
+    padding: 8px 16px;
+    background: white;
+    color: #185FA5;
+    border: 1.5px solid #185FA5;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.btn-step:hover:not(:disabled) {
+    background: #E6F1FB;
+}
+
+.btn-step:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.error-msg {
+    color: #E24B4A;
+    font-size: 13px;
+    margin-top: 8px;
+}

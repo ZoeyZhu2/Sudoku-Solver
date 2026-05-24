@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div id="app">
+        <div id="home-screen">
+            <div class="card">
+                <div class="header-bar"></div>
+                <div class="center">
+                    <h1>ZODOKU</h1>
+                    <div class="divider"></div>
+                    <button class="btn-primary" onclick="showScreen('mode2-screen')">▶ Play</button>
+                    <button class="btn-secondary" onclick="showScreen('mode1-screen')">🔍 Solve a Puzzle</button>
+                </div>
+            </div>
+        </div>
+        <div id="mode1-screen" class="hidden">
+            <div class="mode1-container">
+                <div class="mode1-header">
+                    <button class="btn-back" onclick="showScreen('home-screen')">← Back</button>
+                    <h2>ZODOKU SOLVER</h2>
+                </div>
+
+                <!-- Board -->
+                <div class="board-wrapper">
+                    <table class="sudoku-board" id="sudoku-board">
+                    </table>
+                </div>
+
+                <!-- Strategy display -->
+                <div class="strategy-display" id="strategy-display">
+                    Enter your puzzle and click Solve
+                </div>
+
+                <!-- Step buttons -->
+                <div class="step-buttons">
+                    <button class="btn-step" id="btn-original" onclick="showOriginal()" disabled>⏮ Original</button>
+                    <button class="btn-step" id="btn-prev" onclick="prevStep()" disabled>← Prev</button>
+                    <button class="btn-step" id="btn-next" onclick="nextStep()" disabled>Next →</button>
+                    <button class="btn-step" id="btn-final" onclick="showFinal()" disabled>Final ⏭</button>
+                </div>
+
+                <!-- Load button -->
+                <button class="btn-primary" id="btn-solve" onclick="loadBoard()">Solve</button>
+
+                <!-- Error message -->
+                <p class="error-msg hidden" id="error-msg">Invalid board!</p>
+            </div>
+        </div>
+        <div id="mode2-screen" class="hidden"><h2>Mode 2</h2></div>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>

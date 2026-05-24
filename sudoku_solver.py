@@ -93,11 +93,12 @@ def solve(board):
                 #remove originally present candidates
                 candidates = update_candidates_cell(board, candidates, i, j)
 
+    steps = list() #contains list of cells solved:  [row, col, value, strategy]
     new_board = [row[:] for row in board]
-    new_board, candidates = updateBoard(new_board, candidates)
+    new_board, candidates = updateBoard(new_board, candidates, steps)
     if check(new_board) == False:
         return "stuck"
-    return new_board
+    return new_board, steps
 
 #updates candidates for a particular cell.
 def update_candidates_cell(board, candidates, i, j):
@@ -130,7 +131,7 @@ def get_box_candidates(board, i, j):
     return box_candidates
 
 #helper method for solve(board)
-def updateBoard(board, candidates):
+def updateBoard(board, candidates, steps):
     #copying board and candidates so I don't change the parameters and can compare new with old in solve(board)
     new_board = [row[:] for row in board]
     new_candidates = {key: set(value) for key, value in candidates.items()}
@@ -141,54 +142,54 @@ def updateBoard(board, candidates):
         old_candidates = {key: set(value) for key, value in new_candidates.items()}
         #solving in a chiastic order of complexity from simple -> complex -> simple
         #naked singles: only one candidate
-        new_board, new_candidates = naked_singles(new_board, new_candidates)
+        new_board, new_candidates = naked_singles(new_board, new_candidates, steps)
         old_candidates = {key: set(value) for key, value in new_candidates.items()}
         #hidden singles: a number can only go in one cell in a row/column/box, even if that cell has multiple candidates
-        new_board, new_candidates = hidden_singles(new_board, new_candidates)
+        new_board, new_candidates = hidden_singles(new_board, new_candidates, steps)
         old_candidates = {key: set(value) for key, value in new_candidates.items()}
         #naked pairs: remove candidates if there's two cells with the same 2 candidates
-        new_board, new_candidates = naked_pairs(new_board, new_candidates)
+        new_board, new_candidates = naked_pairs(new_board, new_candidates, steps)
         if old_candidates != new_candidates:
             continue
         old_candidates = {key: set(value) for key, value in new_candidates.items()}
         #hidden pairs: two numbers only appear in two cells within a unit, so all other candidates in those cells can be eliminated
-        new_board, new_candidates = hidden_pairs(new_board, new_candidates)
+        new_board, new_candidates = hidden_pairs(new_board, new_candidates, steps)
         if old_candidates != new_candidates:
             continue
         old_candidates = {key: set(value) for key, value in new_candidates.items()}        
         #pointing pairs: if a candidate IN A BOX only appears in ONE row or col IN THAT BOX, it can be eliminated from that row/col outside of the box
-        new_board, new_candidates = pointing_pairs(new_board, new_candidates)
+        new_board, new_candidates = pointing_pairs(new_board, new_candidates, steps)
         if old_candidates != new_candidates:
             continue
         old_candidates = {key: set(value) for key, value in new_candidates.items()}      
         #naked triples: three cells in a unit share the same 3 candidates
-        new_board, new_candidates = naked_triples(new_board, new_candidates)
+        new_board, new_candidates = naked_triples(new_board, new_candidates, steps)
         if old_candidates != new_candidates:
             continue
         old_candidates = {key: set(value) for key, value in new_candidates.items()}
         #box line reduction: if a candidate IN A ROW/COL only appears in ONE box IN THE ROW/COL, it can be eliminated from that box outside of the ROW/COL
-        new_board, new_candidates = box_line_reduction(new_board, new_candidates)
+        new_board, new_candidates = box_line_reduction(new_board, new_candidates, steps)
         if old_candidates != new_candidates:
             continue
         old_candidates = {key: set(value) for key, value in new_candidates.items()}
         #X-wing: only two cells for a candidate in two diff rows/cols, and they appear in the same cols/rows, then the candidate can be eliminated from the rest of the cols outside the rows or rows outside of the cols
-        new_board, new_candidates = x_wing(new_board, new_candidates)
+        new_board, new_candidates = x_wing(new_board, new_candidates, steps)
         if old_candidates != new_candidates:
             continue
         old_candidates = {key: set(value) for key, value in new_candidates.items()}   
         #Swordfish: only two cells for a candidate in 3 diff rows/cols, and they appear in the same 3 cols/rows, then the candidate can be eliminated from the rest of the cols outside of the rows or the rows outside of the cols
-        new_board, new_candidates = swordfish(new_board, new_candidates)
+        new_board, new_candidates = swordfish(new_board, new_candidates, steps)
         if old_candidates != new_candidates:
             continue
         old_candidates = {key: set(value) for key, value in new_candidates.items()}
         #XY-wing: a cell containing two values intersects two other cells each containing a value from the middle cell and a shared third value (each cell has 2 values). Then everything else in the units of the two wing cells cannot contain the value shared by the wing cells. 
-        new_board, new_candidates = xy_wing(new_board, new_candidates)
+        new_board, new_candidates = xy_wing(new_board, new_candidates, steps)
         if old_candidates == new_candidates:
             updated = False
     return new_board, new_candidates
         
 #solves for naked singles in place, which is okay becuase I put new_board and new_candidates in as parameters
-def naked_singles(board, candidates):
+def naked_singles(board, candidates, steps):
     for i in range(9):
         for j in range(9):
             #identify candidate sets with only 1 value
@@ -196,12 +197,13 @@ def naked_singles(board, candidates):
                 if len(candidates[(i,j)]) == 1:
                     #remove value and set as board value
                     board[i][j] = next(iter(candidates[(i,j)]))
+                    steps.append([i , j, board[i][j], "Naked Singles"])
                     del candidates[(i,j)]
                     #now update candidates around
                     candidates = update_candidates_around_one(board, candidates, i, j, board[i][j])
     return board, candidates
 
-def hidden_singles(board, candidates):
+def hidden_singles(board, candidates, steps):
     #will have to check separately for rows, cols, and boxes
     #making a new dict where the candidate values are the keys
     nums = {} #candidate -> frequency
@@ -258,7 +260,7 @@ def hidden_singles(board, candidates):
                 candidates = update_candidates_around_one(board, candidates, i, j, num)
     return board, candidates
 
-def naked_pairs(board, candidates):
+def naked_pairs(board, candidates, steps):
     #create a set called keys with tuples of candidates
     #only add boxes with two candidates
     #see if any keys in keys have exactly 2 boxes
@@ -320,7 +322,7 @@ def naked_pairs(board, candidates):
                 candidates = update_candidates_around_two_in_a_box(board, candidates, cell_one[0], cell_two[0], cell_one[1], cell_two[1], p, q)       
     return board, candidates
 
-def hidden_pairs(board, candidates):
+def hidden_pairs(board, candidates, steps):
     #if nothing else can be two candidates except in two cells
     #add all potential candidates to a dict and count times they appear so candidate:frequency
     #then locate the two cells with the two candidates if possible
@@ -395,7 +397,7 @@ def hidden_pairs(board, candidates):
     return board, candidates
 
 #pointing pairs: if a candidate IN A BOX only appears in ONE row or col IN THAT BOX, it can be eliminated from that row/col outside of the box
-def pointing_pairs(board, candidates):
+def pointing_pairs(board, candidates, steps):
     for box in range(9):
         candidate_cells = {}  # candidate -> list of cells it appears in
         for row in range(box // 3 * 3, box // 3 * 3 + 3):
@@ -437,7 +439,7 @@ def pointing_pairs(board, candidates):
                                 candidates[(i, c)].discard(candidate)
     return board, candidates
 
-def naked_triples(board, candidates):
+def naked_triples(board, candidates, steps):
     #rows
     for row in range(9):
         potential_cells = [(row, col) for col in range(9) if (row, col) in candidates and len(candidates[(row,col)]) <= 3]
@@ -465,7 +467,7 @@ def naked_triples(board, candidates):
     return board, candidates
 
     #box line reduction: if a candidate IN A ROW/COL only appears in ONE box IN THE ROW/COL, it can be eliminated from that BOX outside of the ROW/COL
-def box_line_reduction(board, candidates):
+def box_line_reduction(board, candidates, steps):
     #check row
     for row in range(9):
         candidate_cells = {} #candidates -> cells
@@ -512,7 +514,7 @@ def box_line_reduction(board, candidates):
     return board, candidates
 
 #X-wing: only two cells for a candidate in two diff rows/cols, and they appear in the same cols/rows, then the candidate can be eliminated from the rest of the cols outside the rows or rows outside of the cols
-def x_wing(board, candidates):
+def x_wing(board, candidates, steps):
     #see if a candidate appears in (i1, j1), (i1, j2), (i2,j1), (i2,j2)
     #then eliminate from rows i1, i2, and cols j1, j2
     potential_total = {} #candidate -> cells
@@ -551,7 +553,7 @@ def x_wing(board, candidates):
     return board, candidates
 
 #Swordfish: only two cells for a candidate in 3 diff rows/cols, and they appear in the same 3 cols/rows, then the candidate can be eliminated from the rest of the cols outside of the rows or the rows outside of the cols
-def swordfish(board, candidates):
+def swordfish(board, candidates, steps):
     #the same candidate needs to cover 3 rows and 3 columns
     potential_total = {} #candidate -> cells
     for row in range(9):
@@ -593,7 +595,7 @@ def swordfish(board, candidates):
 
 #XY-wing: only works for cells with two candidates. Take "pivot" cell that sees cells 1 and 2. Cells 1 and 2 each contain two candidates, B and C, and A and C. They must have candidates in common with pivot (which has, say A, B). Then any cells that see with cells 1 and 2 cannot have C.
 #see: share row/col/box with a cell
-def xy_wing(board, candidates):
+def xy_wing(board, candidates, steps):
     #finding all cells with two candidates
     two_candidates = {} #location -> the two candidates
     for (row,col) in candidates:
@@ -847,7 +849,7 @@ def generate_board(difficulty):
 def input_board(board_string):
     #input will be an 81-char string
     board = [[0] * 9 for i in range(9)]
-    if len(input) != 81:
+    if len(board_string) != 81:
         raise ValueError("Input must be 81 characters")
     valid_values = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'} #set for fast lookup
     for i in range(len(board_string)):
