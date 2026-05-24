@@ -859,10 +859,11 @@ def input_board(board_string):
     return board
 
 
-print(solve(sudoku_board))
+if __name__ == "__main__":
+    print(solve(sudoku_board))
+#only run if I am running this directly
 
 #Next Steps:
-#add a method that takes in a sudoku board
 #create a GUI to input a sudoku board
 #create a GUI to solve sudoku boards
 #make a solve method that shows each step as it is solved
