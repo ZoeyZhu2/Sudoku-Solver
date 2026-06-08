@@ -916,16 +916,19 @@ def fill_board(board):
     return False
 
 def generate_board(difficulty):
+    print(f"generating board, difficulty: {difficulty}")
     board = generate_solved_board()
+    print("solved board generated")
     num_to_delete = 0
     if difficulty == "easy":
-        num_to_delete = 9
+        num_to_delete = 35
     elif difficulty == "medium":
-        num_to_delete = 19
+        num_to_delete = 45
     elif difficulty == "hard":
-        num_to_delete = 24
+        num_to_delete = 52
     elif difficulty == "super hard":
-        num_to_delete = 29
+        num_to_delete = 58
+    print(f"num_to_delete: {num_to_delete}")
     deleted = 0
     while deleted < num_to_delete:
         row = random.randint(0, 8)
@@ -937,6 +940,7 @@ def generate_board(difficulty):
         if is_solvable(new_board):
             board[row][col] = 0
             deleted += 1
+            print(f"deleted {deleted}")
     return board
 
 def input_board(board_string):
