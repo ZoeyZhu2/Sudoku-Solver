@@ -202,7 +202,7 @@ def naked_singles(board, candidates, steps):
                     del candidates[(i,j)]
                     #now update candidates around
                     candidates = update_candidates_around_one(board, candidates, i, j, board[i][j])
-                    list.append((((i,j)), "naked single"))
+                    steps.append((((i,j)), "naked single"))
     return board, candidates
 
 def hidden_singles(board, candidates, steps):
@@ -289,7 +289,7 @@ def naked_pairs(board, candidates, steps):
                 cell_one, cell_two = cells
                 p, q = key
                 candidates = update_candidates_around_two_in_a_row(board, candidates, row, cell_one[1], cell_two[1], p, q)
-                steps.append((cell_one, cell_two), "naked pair")       
+                steps.append(((cell_one, cell_two), "naked pair"))       
     #check columns
     for col in range(9):
         keys = {} #candidate -> location
@@ -308,7 +308,7 @@ def naked_pairs(board, candidates, steps):
                 cell_one, cell_two = cells
                 p, q = key
                 candidates = update_candidates_around_two_in_a_col(board, candidates, cell_one[0], cell_two[0], col, p, q)       
-                steps.append((cell_one, cell_two), "naked pair") 
+                steps.append(((cell_one, cell_two), "naked pair")) 
     #check boxes
     for box in range (9):
         keys = {}
@@ -328,7 +328,7 @@ def naked_pairs(board, candidates, steps):
                 cell_one, cell_two = cells
                 p, q = key
                 candidates = update_candidates_around_two_in_a_box(board, candidates, cell_one[0], cell_two[0], cell_one[1], cell_two[1], p, q)       
-                steps.append((cell_one, cell_two), "naked pair") 
+                steps.append(((cell_one, cell_two), "naked pair")) 
     return board, candidates
 
 def hidden_pairs(board, candidates, steps):
@@ -357,7 +357,7 @@ def hidden_pairs(board, candidates, steps):
                         candidates[cell_one] = {cand_1, cand_2}
                         candidates[cell_two] = {cand_1, cand_2}
                         candidates = update_candidates_around_two_in_a_row(board, candidates, row, cell_one[1], cell_two[1], cand_1, cand_2)
-                        steps.append((cell_one, cell_two), "hidden pair") 
+                        steps.append(((cell_one, cell_two), "hidden pair")) 
 
     #columns
     for col in range(9):
@@ -381,7 +381,7 @@ def hidden_pairs(board, candidates, steps):
                         candidates[cell_one] = {cand_1, cand_2}
                         candidates[cell_two] = {cand_1, cand_2}
                         candidates = update_candidates_around_two_in_a_col(board, candidates, cell_one[0], cell_two[0], col, cand_1, cand_2)
-                        steps.append((cell_one, cell_two), "hidden pair")
+                        steps.append(((cell_one, cell_two), "hidden pair"))
     #boxes
     for box in range(9):
         candidate_cells = {}  # candidate -> list of cells it appears in
@@ -405,7 +405,7 @@ def hidden_pairs(board, candidates, steps):
                         candidates[cell_one] = {cand_1, cand_2}
                         candidates[cell_two] = {cand_1, cand_2}
                         candidates = update_candidates_around_two_in_a_box(board, candidates, cell_one[0], cell_two[0], cell_one[1], cell_two[1], cand_1, cand_2)
-                        steps.append((cell_one, cell_two), "hidden pair")
+                        steps.append(((cell_one, cell_two), "hidden pair"))
     return board, candidates
 
 #pointing pairs: if a candidate IN A BOX only appears in ONE row or col IN THAT BOX, it can be eliminated from that row/col outside of the box
@@ -462,7 +462,7 @@ def naked_triples(board, candidates, steps):
             if len(union) == 3:
                 val_one, val_two, val_three = union
                 candidates = update_candidates_around_three_in_a_row(board, candidates, row, c1[1], c2[1], c3[1], val_one, val_two, val_three)
-                steps.append((c1, c2, c3), "naked triple")
+                steps.append(((c1, c2, c3), "naked triple"))
     #columns
     for col in range(9):
         potential_cells = [(row, col) for row in range(9) if (row, col) in candidates and len(candidates[(row,col)]) <= 3]
@@ -471,7 +471,7 @@ def naked_triples(board, candidates, steps):
             if len(union) == 3:
                 val_one, val_two, val_three = union       
                 candidates = update_candidates_around_three_in_a_col(board, candidates, c1[0], c2[0], c3[0], col, val_one, val_two, val_three)
-                steps.append((c1, c2, c3), "naked triple")
+                steps.append(((c1, c2, c3), "naked triple"))
     #boxes
     for box in range(9):
         potential_cells = [(row, col) for row in range(box // 3 * 3, box // 3 * 3 + 3) for col in range (box % 3 * 3, box % 3 * 3 + 3) if (row, col) in candidates and len(candidates[(row,col)]) <= 3]
@@ -480,7 +480,7 @@ def naked_triples(board, candidates, steps):
             if len(union) == 3:
                 val_one, val_two, val_three = union       
                 candidates = update_candidates_around_three_in_a_box(board, candidates, c1[0], c2[0], c3[0], c1[1], c2[1], c3[1], val_one, val_two, val_three)
-                steps.append((c1, c2, c3), "naked triple")
+                steps.append(((c1, c2, c3), "naked triple"))
     return board, candidates
 
     #box line reduction: if a candidate IN A ROW/COL only appears in ONE box IN THE ROW/COL, it can be eliminated from that BOX outside of the ROW/COL
