@@ -1,0 +1,29 @@
+# The plan:
+# Color scheme: like NYT but Columbia blue mode. Very vibrant colors. Black, white, and light blude mostly, with some dark blue.
+# Clicking a cell highlights it light blue.
+# can traverse cells by clicking or with arrow keys.
+# There will be a button to show errors, which will highlight the cell light red.
+# Buttons:
+# For mode 1, show next step, show previous step, show original, show final like Chess.com game review. 
+# For mode 2, pause, solve, reset, hint, check, new puzzle buttons.
+# Timer only for mode 2.
+# Difficulty selector on mode 2 like on NYT.
+
+# Overall structure before coding: 1 file, separate classes
+# Two screens:
+# Home screen — choose Mode 1 or Mode 2, with NYT-style clean design
+# Game screen — the actual board with buttons
+# Mode 1 game screen:
+# 9x9 board display and must input all the numbers a player has
+# convert blanks to 0s
+# check if it is solvable
+# Show original / Step back / Step forward / Show final buttons
+# At each step, Current strategy being used displayed
+# Mode 2 game screen:
+# Difficulty selector (Easy/Medium/Hard/Evil)
+# 9x9 board display with given numbers filled in and unchangeable. Make these numbers bold black.
+# Timer showing the time elapsed. Automatically pause if user leaves the window/tab
+# Pausing should show an overlay blocking the 9x9 board with "Game Paused" text and a Click to Resume butotn
+# Pause / Solve / Reset / Hint / Check / New Puzzle buttons
+
+
