@@ -28,4 +28,7 @@
 # Pausing should show an overlay blocking the 9x9 board with "Game Paused" text and a Click to Resume butotn
 # Pause / Solve / Reset / Hint / Check / New Puzzle buttons
 
-
+# Home page
+# Learn to Sudoku
+# Learn to solve step-by-step with beginner to advanced strategies
+# Practice solving puzzles across 4 difficulties!
