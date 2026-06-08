@@ -17,11 +17,13 @@
 # 9x9 board display and must input all the numbers a player has
 # convert blanks to 0s
 # check if it is solvable
+# have a box showing all the valid candidates for each cell based on the inputs. Invalid candidates are light gray while valid candidates are black.
 # Show original / Step back / Step forward / Show final buttons
 # At each step, Current strategy being used displayed
 # Mode 2 game screen:
 # Difficulty selector (Easy/Medium/Hard/Evil)
 # 9x9 board display with given numbers filled in and unchangeable. Make these numbers bold black.
+# have a box showing number 1-9 with a toggle for value/candidate and user can click the toggle to change the setting for what they want to input.
 # Timer showing the time elapsed. Automatically pause if user leaves the window/tab
 # Pausing should show an overlay blocking the 9x9 board with "Game Paused" text and a Click to Resume butotn
 # Pause / Solve / Reset / Hint / Check / New Puzzle buttons
