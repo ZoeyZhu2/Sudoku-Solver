@@ -123,6 +123,7 @@ h1 {
     font-weight: 900;
     letter-spacing: 4px;
     color: #121212;
+    white-space: nowrap;
 }
 
 .btn-back {
@@ -142,6 +143,9 @@ h1 {
 .sudoku-board td {
     width: 48px;
     height: 48px;
+    overflow: hidden;
+    padding: 0;
+    position: relative;
     text-align: center;
     vertical-align: middle;
     border: 0.5px solid #B5D4F4;
@@ -166,6 +170,14 @@ h1 {
 
 .sudoku-board .solved {
     color: #185FA5;
+}
+
+.sudoku-board .highlight-cell {
+    background-color: #B5D4F4;   /* blue — the strategy's key cells */
+}
+
+.sudoku-board .highlight-discard {
+    background-color: #F7C1C1;   /* red — cells that lose a candidate */
 }
 
 /* thick borders for 3x3 boxes */
@@ -215,4 +227,37 @@ h1 {
     color: #E24B4A;
     font-size: 13px;
     margin-top: 8px;
+}
+
+.candidate-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+    height: 100%;
+    padding: 1px;
+    box-sizing: border-box;
+}
+
+.candidate {
+    font-size: 8px;
+    font-weight: 400;
+    color: #121212;
+    text-align: center;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+}
+
+.hidden-cand {
+    visibility: hidden;
+}
+
+.discarded-cand {
+    visibility: visible !important;
+    color: #E24B4A;
+    text-decoration: line-through;
 }
