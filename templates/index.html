@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sudoku</title>
+    <title>ZODOKU</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -52,7 +52,72 @@
                 <p class="error-msg hidden" id="error-msg">Invalid board!</p>
             </div>
         </div>
-        <div id="mode2-screen" class="hidden"><h2>Mode 2</h2></div>
+        <div id="mode2-screen" class="hidden">
+            <div class="mode2-container">
+
+                <!-- Header -->
+                <div class="mode2-header">
+                    <button class="btn-back" onclick="showScreen('home-screen')">← Back</button>
+                    <h2>ZODOKU</h2>
+                </div>
+
+                <!-- Difficulty selector -->
+                <div class="difficulty-selector" id="difficulty-selector">
+                    <button class="diff-btn active" onclick="selectDifficulty('easy', this)">Easy</button>
+                    <button class="diff-btn" onclick="selectDifficulty('medium', this)">Medium</button>
+                    <button class="diff-btn" onclick="selectDifficulty('hard', this)">Hard</button>
+                    <button class="diff-btn" onclick="selectDifficulty('super hard', this)">Super Hard</button>
+                </div>
+
+                <!-- Timer -->
+                <div class="timer-display" id="timer-display">0:00</div>
+
+                <!-- Pause overlay wrapper: contains both board and overlay -->
+                <div class="board-wrapper" id="mode2-board-wrapper">
+                    <table class="sudoku-board" id="sudoku-board-2"></table>
+                    <!-- Pause overlay sits on top of the board -->
+                    <div class="pause-overlay" id="pause-overlay">
+                        <p>Game Paused</p>
+                        <button onclick="resumeGame()">Click to Resume</button>
+                    </div>
+                </div>
+
+                <!-- Input mode toggle -->
+                <div class="input-toggle">
+                    <!-- clicking Normal sets inputMode to 'value' -->
+                    <button class="toggle-btn active" id="toggle-value" onclick="setInputMode('value')">Normal</button>
+                    <!-- clicking Notes sets inputMode to 'candidate' -->
+                    <button class="toggle-btn" id="toggle-candidate" onclick="setInputMode('candidate')">Notes</button>
+                </div>
+
+                <!-- Number pad — click a number to select it, then click a cell -->
+                <div class="number-pad" id="number-pad">
+                    <button class="num-btn" onclick="selectNumber(1)">1</button>
+                    <button class="num-btn" onclick="selectNumber(2)">2</button>
+                    <button class="num-btn" onclick="selectNumber(3)">3</button>
+                    <button class="num-btn" onclick="selectNumber(4)">4</button>
+                    <button class="num-btn" onclick="selectNumber(5)">5</button>
+                    <button class="num-btn" onclick="selectNumber(6)">6</button>
+                    <button class="num-btn" onclick="selectNumber(7)">7</button>
+                    <button class="num-btn" onclick="selectNumber(8)">8</button>
+                    <button class="num-btn" onclick="selectNumber(9)">9</button>
+                </div>
+
+                <!-- Status message (shows errors from Check, or "Solved!") -->
+                <div class="mode2-status" id="mode2-status"></div>
+
+                <!-- Action buttons -->
+                <div class="mode2-buttons">
+                    <button class="btn-step" onclick="pauseGame()" id="btn-pause">⏸ Pause</button>
+                    <button class="btn-step" onclick="resetGame()">↺ Reset</button>
+                    <button class="btn-step" onclick="newPuzzle()">New</button>
+                    <button class="btn-step" onclick="hintGame()">💡 Hint</button>
+                    <button class="btn-step" onclick="checkGame()">✓ Check</button>
+                    <button class="btn-step" onclick="solveGame()">⚡ Solve</button>
+                </div>
+
+            </div>
+        </div>
     </div>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
