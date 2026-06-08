@@ -207,8 +207,16 @@ def naked_singles(board, candidates, steps):
                     #remove value and set as board value
                     value = next(iter(candidates[(i,j)]))
                     board[i][j] = value
-                    steps.append([[[i , j]], board[i][j], "naked single",[]])
                     del candidates[(i,j)]
+                    cells_to_check = (
+                        [(i, col) for col in range(9) if col != j and (i, col) in candidates] +
+                        [(row, j) for row in range(9) if row != i and (row, j) in candidates] +
+                        [(r, c) for r in range(i // 3 * 3, i // 3 * 3 + 3)
+                                for c in range(j // 3 * 3, j // 3 * 3 + 3)
+                                if (r, c) != (i, j) and (r, c) in candidates]
+                    )
+                    discarded = get_discards(candidates, cells_to_check, {value})
+                    steps.append([[[i, j]], value, "naked single", discarded])
                     #now update candidates around
                     candidates = update_candidates_around_one(board, candidates, i, j, board[i][j])
     return board, candidates
@@ -230,27 +238,42 @@ def hidden_singles(board, candidates, steps):
         for num in range(1, 10):
             if len(nums[num]) == 1:
                 (i, j) = next(iter(nums[num]))
+                cells_to_check = (
+                    [(i, c) for c in range(9) if c != j and (i, c) in candidates] +
+                    [(r, j) for r in range(9) if r != i and (r, j) in candidates] +
+                    [(r, c) for r in range(i // 3 * 3, i // 3 * 3 + 3)
+                             for c in range(j // 3 * 3, j // 3 * 3 + 3)
+                             if (r, c) != (i, j) and (r, c) in candidates]
+                )
+                discarded = get_discards(candidates, cells_to_check, {num})
+                steps.append([[[i, j]], num, "hidden single", discarded])
                 board[i][j] = num
-                del candidates[(i,j)]
+                del candidates[(i, j)]
                 candidates = update_candidates_around_one(board, candidates, i, j, num)
-                steps.append([[[i , j]], board[i][j], "hidden single",[]])
 
-    #check cols
+    # check cols
     for col in range(9):
-        #adding keys 1-9
-        for num in range(1,10):
+        for num in range(1, 10):
             nums[num] = set()
         for row in range(9):
             if (row, col) in candidates:
-                for i in candidates[(row,col)]:
+                for i in candidates[(row, col)]:
                     nums[i].add((row, col))
         for num in range(1, 10):
             if len(nums[num]) == 1:
                 (i, j) = next(iter(nums[num]))
+                cells_to_check = (
+                    [(i, c) for c in range(9) if c != j and (i, c) in candidates] +
+                    [(r, j) for r in range(9) if r != i and (r, j) in candidates] +
+                    [(r, c) for r in range(i // 3 * 3, i // 3 * 3 + 3)
+                             for c in range(j // 3 * 3, j // 3 * 3 + 3)
+                             if (r, c) != (i, j) and (r, c) in candidates]
+                )
+                discarded = get_discards(candidates, cells_to_check, {num})
+                steps.append([[[i, j]], num, "hidden single", discarded])
                 board[i][j] = num
-                del candidates[(i,j)]
+                del candidates[(i, j)]
                 candidates = update_candidates_around_one(board, candidates, i, j, num)
-                steps.append([[[i , j]], board[i][j], "hidden single",[]])
 
     #check boxes
     # 0 1 2
@@ -268,10 +291,18 @@ def hidden_singles(board, candidates, steps):
         for num in range(1, 10):
             if len(nums[num]) == 1:
                 (i, j) = next(iter(nums[num]))
+                cells_to_check = (
+                    [(i, col) for col in range(9) if col != j and (i, col) in candidates] +
+                    [(row, j) for row in range(9) if row != i and (row, j) in candidates] +
+                    [(r, c) for r in range(i // 3 * 3, i // 3 * 3 + 3)
+                             for c in range(j // 3 * 3, j // 3 * 3 + 3)
+                             if (r, c) != (i, j) and (r, c) in candidates]
+                )
+                discarded = get_discards(candidates, cells_to_check, {num})
+                steps.append([[[i, j]], num, "hidden single", discarded])
                 board[i][j] = num
-                del candidates[(i,j)]
+                del candidates[(i, j)]
                 candidates = update_candidates_around_one(board, candidates, i, j, num)
-                steps.append([[[i , j]], board[i][j], "hidden single",[]])
     return board, candidates
 
 def naked_pairs(board, candidates, steps):
