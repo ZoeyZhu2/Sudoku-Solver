@@ -93,7 +93,7 @@ def solve(board):
                 #remove originally present candidates
                 candidates = update_candidates_cell(board, candidates, i, j)
 
-    steps = list() #contains list of cells solved: [(tuple of cells), strategy]
+    steps = list() #contains list of cells solved: [[list of cells], value_placed (0 if none), strategy, [[row, col, candidates discarded],...] (list of cells and their updated candidates)]
     new_board = [row[:] for row in board]
     new_board, candidates = updateBoard(new_board, candidates, steps)
     if check(new_board) == False:
@@ -188,6 +188,15 @@ def updateBoard(board, candidates, steps):
             updated = False
     return new_board, new_candidates
         
+def get_discards(candidates, cells_to_check, values_to_remove):
+    discarded = []
+    for (r, c) in cells_to_check:
+        if (r, c) in candidates:
+            for v in values_to_remove:
+                if v in candidates[(r, c)]:
+                    discarded.append([r, c, v])
+    return discarded
+
 #solves for naked singles in place, which is okay becuase I put new_board and new_candidates in as parameters
 def naked_singles(board, candidates, steps):
     for i in range(9):
@@ -198,11 +207,10 @@ def naked_singles(board, candidates, steps):
                     #remove value and set as board value
                     value = next(iter(candidates[(i,j)]))
                     board[i][j] = value
-                    steps.append([i , j, board[i][j], "Naked Singles"])
+                    steps.append([[[i , j]], board[i][j], "naked single",[]])
                     del candidates[(i,j)]
                     #now update candidates around
                     candidates = update_candidates_around_one(board, candidates, i, j, board[i][j])
-                    steps.append((((i,j)), "naked single"))
     return board, candidates
 
 def hidden_singles(board, candidates, steps):
@@ -225,7 +233,7 @@ def hidden_singles(board, candidates, steps):
                 board[i][j] = num
                 del candidates[(i,j)]
                 candidates = update_candidates_around_one(board, candidates, i, j, num)
-                steps.append((((i,j)), "hidden single"))
+                steps.append([[[i , j]], board[i][j], "hidden single",[]])
 
     #check cols
     for col in range(9):
@@ -242,7 +250,7 @@ def hidden_singles(board, candidates, steps):
                 board[i][j] = num
                 del candidates[(i,j)]
                 candidates = update_candidates_around_one(board, candidates, i, j, num)
-                steps.append((((i,j)), "hidden single"))
+                steps.append([[[i , j]], board[i][j], "hidden single",[]])
 
     #check boxes
     # 0 1 2
@@ -263,7 +271,7 @@ def hidden_singles(board, candidates, steps):
                 board[i][j] = num
                 del candidates[(i,j)]
                 candidates = update_candidates_around_one(board, candidates, i, j, num)
-                steps.append((((i,j)), "hidden single"))
+                steps.append([[[i , j]], board[i][j], "hidden single",[]])
     return board, candidates
 
 def naked_pairs(board, candidates, steps):
@@ -288,8 +296,17 @@ def naked_pairs(board, candidates, steps):
             if len(cells) == 2:
                 cell_one, cell_two = cells
                 p, q = key
+                cells_to_check = [(row, col) for col in range(9) 
+                    if col != cell_one[1] and col != cell_two[1]
+                    and (row, col) in candidates]
+                discarded = get_discards(candidates, cells_to_check, {p, q})
+                steps.append([
+                    [[cell_one[0], cell_one[1]], [cell_two[0], cell_two[1]]],
+                    0,
+                    "naked pair",
+                    discarded
+                ])
                 candidates = update_candidates_around_two_in_a_row(board, candidates, row, cell_one[1], cell_two[1], p, q)
-                steps.append(((cell_one, cell_two), "naked pair"))       
     #check columns
     for col in range(9):
         keys = {} #candidate -> location
@@ -307,8 +324,17 @@ def naked_pairs(board, candidates, steps):
             if len(cells) == 2:
                 cell_one, cell_two = cells
                 p, q = key
+                cells_to_check = [(row, col) for row in range(9) 
+                    if row != cell_one[0] and row != cell_two[0]
+                    and (row, col) in candidates]
+                discarded = get_discards(candidates, cells_to_check, {p, q})
+                steps.append([
+                    [[cell_one[0], cell_one[1]], [cell_two[0], cell_two[1]]],
+                    0,
+                    "naked pair",
+                    discarded
+                ])
                 candidates = update_candidates_around_two_in_a_col(board, candidates, cell_one[0], cell_two[0], col, p, q)       
-                steps.append(((cell_one, cell_two), "naked pair")) 
     #check boxes
     for box in range (9):
         keys = {}
@@ -327,8 +353,20 @@ def naked_pairs(board, candidates, steps):
             if len(cells) == 2:
                 cell_one, cell_two = cells
                 p, q = key
+                box_row_start = cell_one[0] // 3 * 3
+                box_col_start = cell_one[1] // 3 * 3
+                cells_to_check = [(r,c) for r in range(box_row_start, box_row_start + 3)
+                    for c in range(box_col_start, box_col_start + 3)
+                    if (r,c) != cell_one and (r,c) != cell_two and (r,c in candidates)
+                ]
+                discarded = get_discards(candidates, cells_to_check, {p, q})
+                steps.append([
+                    [[cell_one[0], cell_one[1]], [cell_two[0], cell_two[1]]],
+                    0,
+                    "naked pair",
+                    discarded
+                ])
                 candidates = update_candidates_around_two_in_a_box(board, candidates, cell_one[0], cell_two[0], cell_one[1], cell_two[1], p, q)       
-                steps.append(((cell_one, cell_two), "naked pair")) 
     return board, candidates
 
 def hidden_pairs(board, candidates, steps):
@@ -354,10 +392,11 @@ def hidden_pairs(board, candidates, steps):
                     if twice[cand_1] == twice[cand_2]: #since the order of the location tuples will be the same
                     #update candidates
                         cell_one, cell_two = twice[cand_1]
+                        discarded = get_discards(candidates, [cell_one, cell_two], candidates[cell_one] | candidates[cell_two] - {cand_1, cand_2})
+                        steps.append([[[cell_one[0], cell_one[1]], [cell_two[0], cell_two[1]]], 0, "hidden pair", discarded])
                         candidates[cell_one] = {cand_1, cand_2}
                         candidates[cell_two] = {cand_1, cand_2}
                         candidates = update_candidates_around_two_in_a_row(board, candidates, row, cell_one[1], cell_two[1], cand_1, cand_2)
-                        steps.append(((cell_one, cell_two), "hidden pair")) 
 
     #columns
     for col in range(9):
@@ -378,10 +417,11 @@ def hidden_pairs(board, candidates, steps):
                     if twice[cand_1] == twice[cand_2]: #since the order of the location tuples will be the same
                     #update candidates
                         cell_one, cell_two = twice[cand_1]
+                        discarded = get_discards(candidates, [cell_one, cell_two], candidates[cell_one] | candidates[cell_two] - {cand_1, cand_2})
+                        steps.append([[[cell_one[0], cell_one[1]], [cell_two[0], cell_two[1]]], 0, "hidden pair", discarded])
                         candidates[cell_one] = {cand_1, cand_2}
                         candidates[cell_two] = {cand_1, cand_2}
                         candidates = update_candidates_around_two_in_a_col(board, candidates, cell_one[0], cell_two[0], col, cand_1, cand_2)
-                        steps.append(((cell_one, cell_two), "hidden pair"))
     #boxes
     for box in range(9):
         candidate_cells = {}  # candidate -> list of cells it appears in
@@ -402,10 +442,11 @@ def hidden_pairs(board, candidates, steps):
                     if twice[cand_1] == twice[cand_2]: #since the order of the location tuples will be the same
                     #update candidates
                         cell_one, cell_two = twice[cand_1]
+                        discarded = get_discards(candidates, [cell_one, cell_two], candidates[cell_one] | candidates[cell_two] - {cand_1, cand_2})
+                        steps.append([[[cell_one[0], cell_one[1]], [cell_two[0], cell_two[1]]], 0, "hidden pair", discarded])
                         candidates[cell_one] = {cand_1, cand_2}
                         candidates[cell_two] = {cand_1, cand_2}
                         candidates = update_candidates_around_two_in_a_box(board, candidates, cell_one[0], cell_two[0], cell_one[1], cell_two[1], cand_1, cand_2)
-                        steps.append(((cell_one, cell_two), "hidden pair"))
     return board, candidates
 
 #pointing pairs: if a candidate IN A BOX only appears in ONE row or col IN THAT BOX, it can be eliminated from that row/col outside of the box
@@ -428,29 +469,27 @@ def pointing_pairs(board, candidates, steps):
                 for i in range(len(cells)):
                     rows.append(cells[i][0])
                     cols.append(cells[i][1])
-                r = rows[0]
-                c = cols[0]
-                same_row = True
-                same_col = True
-                for rs in rows:
-                    if rs != r:
-                        same_row = False
-                for cs in cols:
-                    if cs != c:
-                        same_col = False
+                r, c = rows[0], cols[0]
+                same_row = all(x == r for x in rows)
+                same_col = all(x == c for x in cols)
                 if same_row == True:
-                    for j in range(9):
-                        if j < box % 3 * 3 or j >= box % 3 * 3 + 3:  # outside the box
-                            if (r, j) in candidates:
-                                candidates[(r, j)].discard(candidate)
-                                steps.append(((r, j)), "pointing pair")
-
+                    cells_to_check = [(r, j) for j in range(9)
+                        if (j < box % 3 * 3 or j >= box % 3 * 3 + 3)
+                        and (r, j) in candidates]
+                    discarded = get_discards(candidates, cells_to_check, {candidate})
+                    if discarded:
+                        steps.append([[list(cell) for cell in cells], 0, "pointing pair", discarded])
+                    for (r2, j) in cells_to_check:
+                        candidates[(r2, j)].discard(candidate)
                 if same_col == True:
-                    for i in range(9):
-                        if i < box // 3 * 3 or i >= box // 3 * 3 + 3:  # outside the box
-                            if (i, c) in candidates:
-                                candidates[(i, c)].discard(candidate)
-                                steps.append(((i, c)), "pointing pair")
+                    cells_to_check = [(i, c) for i in range(9)
+                        if (i < box // 3 * 3 or i >= box // 3 * 3 + 3)
+                        and (i, c) in candidates]
+                    discarded = get_discards(candidates, cells_to_check, {candidate})
+                    if discarded:
+                        steps.append([[list(cell) for cell in cells], 0, "pointing pair", discarded])
+                    for (i, c2) in cells_to_check:
+                        candidates[(i, c2)].discard(candidate)
     return board, candidates
 
 def naked_triples(board, candidates, steps):
@@ -461,8 +500,13 @@ def naked_triples(board, candidates, steps):
             union = candidates[c1] | candidates[c2] | candidates[c3]
             if len(union) == 3:
                 val_one, val_two, val_three = union
+                cells_to_check = [(row, col) for col in range(9)
+                    if (row, col) in candidates
+                    and (row, col) not in (c1, c2, c3)]
+                discarded = get_discards(candidates, cells_to_check, union)
+                if discarded:
+                    steps.append([[list(c1), list(c2), list(c3)], 0, "naked triple", discarded])
                 candidates = update_candidates_around_three_in_a_row(board, candidates, row, c1[1], c2[1], c3[1], val_one, val_two, val_three)
-                steps.append(((c1, c2, c3), "naked triple"))
     #columns
     for col in range(9):
         potential_cells = [(row, col) for row in range(9) if (row, col) in candidates and len(candidates[(row,col)]) <= 3]
@@ -470,8 +514,13 @@ def naked_triples(board, candidates, steps):
             union = candidates[c1] | candidates[c2] | candidates[c3]
             if len(union) == 3:
                 val_one, val_two, val_three = union       
+                cells_to_check = [(row, col) for row in range(9)
+                    if (row, col) in candidates
+                    and (row, col) not in (c1, c2, c3)]
+                discarded = get_discards(candidates, cells_to_check, union)
+                if discarded:
+                    steps.append([[list(c1), list(c2), list(c3)], 0, "naked triple", discarded])
                 candidates = update_candidates_around_three_in_a_col(board, candidates, c1[0], c2[0], c3[0], col, val_one, val_two, val_three)
-                steps.append(((c1, c2, c3), "naked triple"))
     #boxes
     for box in range(9):
         potential_cells = [(row, col) for row in range(box // 3 * 3, box // 3 * 3 + 3) for col in range (box % 3 * 3, box % 3 * 3 + 3) if (row, col) in candidates and len(candidates[(row,col)]) <= 3]
@@ -479,8 +528,16 @@ def naked_triples(board, candidates, steps):
             union = candidates[c1] | candidates[c2] | candidates[c3]
             if len(union) == 3:
                 val_one, val_two, val_three = union       
+                box_row_start = c1[0] // 3 * 3
+                box_col_start = c1[1] // 3 * 3
+                cells_to_check = [(r, c)
+                    for r in range(box_row_start, box_row_start + 3)
+                    for c in range(box_col_start, box_col_start + 3)
+                    if (r, c) in candidates and (r, c) not in (c1, c2, c3)]
+                discarded = get_discards(candidates, cells_to_check, union)
+                if discarded:
+                    steps.append([[list(c1), list(c2), list(c3)], 0, "naked triple", discarded])
                 candidates = update_candidates_around_three_in_a_box(board, candidates, c1[0], c2[0], c3[0], c1[1], c2[1], c3[1], val_one, val_two, val_three)
-                steps.append(((c1, c2, c3), "naked triple"))
     return board, candidates
 
     #box line reduction: if a candidate IN A ROW/COL only appears in ONE box IN THE ROW/COL, it can be eliminated from that BOX outside of the ROW/COL
@@ -502,11 +559,14 @@ def box_line_reduction(board, candidates, steps):
             same_box = len(boxes) == 1
             if same_box:
                 (i, j) = cells[0]
-                for r in range(i // 3 * 3, i // 3 * 3 + 3):
-                    for c in range(j // 3 * 3, j // 3 * 3 + 3):
-                        if (r,c) in candidates and r != i:
-                            candidates[(r,c)].discard(candidate)
-                            steps.append(((r,c)), "box line reduction")
+                cells_to_check = [(r, c) for r in range(i // 3 * 3, i // 3 * 3 + 3)
+                    for c in range(j // 3 * 3, j // 3 * 3 + 3)
+                    if r != row and (r, c) in candidates]
+                discarded = get_discards(candidates, cells_to_check, {candidate})
+                if discarded:
+                    steps.append([[list(cell) for cell in cells], 0, "box line reduction", discarded])
+                for (r, c) in cells_to_check:
+                    candidates[(r, c)].discard(candidate)
 
     #check col
     for col in range(9):
@@ -525,11 +585,14 @@ def box_line_reduction(board, candidates, steps):
             same_box = len(boxes) == 1
             if same_box:
                 (i, j) = cells[0]
-                for r in range(i // 3 * 3, i // 3 * 3 + 3):
-                    for c in range(j // 3 * 3, j // 3 * 3 + 3):
-                        if (r, c) in candidates and c != j:
-                            candidates[(r, c)].discard(candidate)
-                            steps.append(((r,c)), "box line reduction")
+                cells_to_check = [(r, c) for r in range(i // 3 * 3, i // 3 * 3 + 3)
+                    for c in range(j // 3 * 3, j // 3 * 3 + 3)
+                    if c != col and (r, c) in candidates]
+                discarded = get_discards(candidates, cells_to_check, {candidate})
+                if discarded:
+                    steps.append([[list(cell) for cell in cells], 0, "box line reduction", discarded])
+                for (r, c) in cells_to_check:
+                    candidates[(r, c)].discard(candidate)
     return board, candidates
 
 #X-wing: only two cells for a candidate in two diff rows/cols, and they appear in the same cols/rows, then the candidate can be eliminated from the rest of the cols outside the rows or rows outside of the cols
@@ -559,18 +622,18 @@ def x_wing(board, candidates, steps):
         if len(cols) == 2 and len(rows) == 2:  # exactly 2 rows and 2 cols = X-wing!
             j_one, j_two = cols
             i_one, i_two = rows
-            for row in [i_one, i_two]:
-                for col in range(9):
-                    if col != j_one and col != j_two:
-                        if (row, col) in candidates:
-                            candidates[(row, col)].discard(key)
-                            steps.append(((row, col)), "x-wing")
-            for col in [j_one, j_two]:
-                for row in range(9):
-                    if row != i_one and row != i_two:
-                        if (row, col) in candidates:
-                            candidates[(row, col)].discard(key)
-                            steps.append(((row, col)), "x-wing")
+            key_cells = [[i, j] for (i, j) in four_times[key]]
+            cells_to_check = (
+                [(row, col) for row in [i_one, i_two] for col in range(9)
+                    if col != j_one and col != j_two and (row, col) in candidates] +
+                [(row, col) for col in [j_one, j_two] for row in range(9)
+                    if row != i_one and row != i_two and (row, col) in candidates]
+            )
+            discarded = get_discards(candidates, cells_to_check, {key})
+            if discarded:
+                steps.append([key_cells, 0, "x-wing", discarded])
+            for (row, col) in cells_to_check:
+                candidates[(row, col)].discard(key)
     return board, candidates
 
 #Swordfish: only two cells for a candidate in 3 diff rows/cols, and they appear in the same 3 cols/rows, then the candidate can be eliminated from the rest of the cols outside of the rows or the rows outside of the cols
@@ -594,26 +657,23 @@ def swordfish(board, candidates, steps):
                 potential_total[key] = maybe[key]
     maybe_total = {candidate: cells for candidate, cells in potential_total.items() if len(cells) >= 6 and len(cells) <= 9}
     for key in maybe_total:
-        rows = set()
-        cols = set()
-        for (i, j) in maybe_total[key]:
-            rows.add(i)
-            cols.add(j)
+        rows = set(cell[0] for cell in maybe_total[key])
+        cols = set(cell[1] for cell in maybe_total[key])
         if len(rows) == 3 and len(cols) == 3:
             j_one, j_two, j_three = cols
             i_one, i_two, i_three = rows
-            for row in [i_one, i_two, i_three]:
-                for col in range(9):
-                    if col != j_one and col != j_two and col != j_three:
-                        if (row, col) in candidates:
-                            candidates[(row, col)].discard(key)
-                            steps.append(((row, col)), "swordfish")
-            for col in [j_one, j_two, j_three]:
-                for row in range(9):
-                    if row != i_one and row != i_two and row != i_three:
-                        if (row, col) in candidates:
-                            candidates[(row, col)].discard(key)
-                            steps.append(((row, col)), "swordfish")
+            key_cells = [[i, j] for (i, j) in maybe_total[key]]
+            cells_to_check = (
+                [(row, col) for row in [i_one, i_two, i_three] for col in range(9)
+                    if col not in {j_one, j_two, j_three} and (row, col) in candidates] +
+                [(row, col) for col in [j_one, j_two, j_three] for row in range(9)
+                    if row not in {i_one, i_two, i_three} and (row, col) in candidates]
+            )
+            discarded = get_discards(candidates, cells_to_check, {key})
+            if discarded:
+                steps.append([key_cells, 0, "swordfish", discarded])
+            for (row, col) in cells_to_check:
+                candidates[(row, col)].discard(key)
     return board, candidates
 
 #XY-wing: only works for cells with two candidates. Take "pivot" cell that sees cells 1 and 2. Cells 1 and 2 each contain two candidates, B and C, and A and C. They must have candidates in common with pivot (which has, say A, B). Then any cells that see with cells 1 and 2 cannot have C.
@@ -621,71 +681,48 @@ def swordfish(board, candidates, steps):
 def xy_wing(board, candidates, steps):
     #finding all cells with two candidates
     two_candidates = {} #location -> the two candidates
+    #These are the only cells that can be a pivot or wing in XY-wing.
     for (row,col) in candidates:
         if len(candidates[(row, col)]) == 2:
             two_candidates[(row, col)] = candidates[(row, col)]
-    #finding all pivots
+    
+    #a cell sees another if it is in the same row, col, or box
+    def sees(r1, c1, r2, c2):
+        return r1 == r2 or c1 == c2 or (r1 // 3 == r2 // 3 and c1 // 3 == c2 // 3)
+    
+    #Try every 2-candidate cell as the pivot
     for (row, col) in two_candidates:
-        sees = {} #location -> two candidates
-        for (i, j) in two_candidates:
-            if row != i or col != j:
-            #same row?
-                if row == i:
-                    sees[(i,j)] = two_candidates[(i,j)]
-            #same col?
-                if col == j:
-                    sees[(i, j)] = two_candidates[(i, j)]
-            #same box?
-                elif row // 3 == i // 3 and col // 3 == j // 3:
-                    sees[(i, j)] = two_candidates[(i, j)]
-        #seeing if (row, col) is actually a pivot
         pivot_cands = two_candidates[(row, col)]
-        #deleting all nonviable wings
-        new_sees = {}
-        if len(sees) >= 2:
-            for (i, j) in sees:
-                shared = sees[(i,j)] & pivot_cands #set intersection
-                if len(shared) == 1:
-                    new_sees[(i,j)] = sees[(i,j)]
-        if len(new_sees) >= 2:
-            for (i_one, j_one) in new_sees:
-                for (i_two, j_two) in new_sees:
-                    if i_one != i_two or j_one != j_two:
-                        #check for valid wings:
-                        wing_set = new_sees[(i_one, j_one)] & new_sees[(i_two, j_two)]
-                        if len(wing_set) == 1 and not (wing_set & pivot_cands):                            #remove cand_one1 from all cells that see i_one, j_one AND i_two, j_two
-                            val = next(iter(wing_set))
-                            #make list of all valid cells
-                            valid = {} #location -> candidates
-                            for i in range(9):
-                                for j in range(9):
-                                    sees_one = False
-                                    sees_two = False
-                                    if (i, j) in candidates:
-                                        if (i != i_one or j != j_one) and (i != i_two or j != j_two):
-                                            #same row?
-                                            if i == i_one:
-                                                sees_one = True
-                                            #same col?
-                                            elif j == j_one:
-                                                sees_one = True
-                                            #same box?
-                                            elif i // 3 == i_one // 3 and j // 3 == j_one // 3:
-                                                sees_one = True
-                                            #same row?
-                                            if i == i_two:
-                                                sees_two = True
-                                            #same col?
-                                            elif j == j_two:
-                                                sees_two = True
-                                            #same box?
-                                            elif i // 3 == i_two // 3 and j // 3 == j_two // 3:
-                                                sees_two = True
-                                        if sees_one == True and sees_two == True:
-                                            valid[(i,j)] = candidates[(i, j)]
-                            for (i, j) in valid:
-                                candidates[(i, j)].discard(val)
-                                steps.append(((i,j)), "xy-wing")
+        #Find all valid wings for this pivot: cells that are not the pivot itself, see the pivot, and share exactly one candidate with it
+        wings = [(i, j) for (i, j) in two_candidates
+            if (i != row or j != col)
+            and sees(row, col, i, j)
+            and len(two_candidates[(i, j)] & pivot_cands) == 1]
+        
+        #try every pair of wings
+        for idx, (i_one, j_one) in enumerate(wings):
+            for (i_two, j_two) in wings[idx + 1:]:
+
+                #make sure the two wings share a candidate with each other but not with the pivot
+                wing_set = two_candidates[(i_one, j_one)] & two_candidates[(i_two, j_two)]
+                if len(wing_set) == 1 and not (wing_set & pivot_cands):
+                    #get where the two wings intersect
+                    val = next(iter(wing_set))
+                    #eliminate the candidate where the two wings intersect from every cell that sees both wings
+                    cells_to_check = [(i, j) for i in range(9) for j in range(9)
+                        if (i, j) in candidates
+                        and (i != i_one or j != j_one)
+                        and (i != i_two or j != j_two)
+                        and sees(i, j, i_one, j_one)
+                        and sees(i, j, i_two, j_two)]
+                    discarded = get_discards(candidates, cells_to_check, {val})
+                    if discarded:
+                        steps.append([
+                            [[row, col], [i_one, j_one], [i_two, j_two]],
+                            0, "xy-wing", discarded
+                        ])
+                    for (i, j) in cells_to_check:
+                        candidates[(i, j)].discard(val)
     return board, candidates
 
 #updates candidates in a cell's row/col/box after that cell has been changed
