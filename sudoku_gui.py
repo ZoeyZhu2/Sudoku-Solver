@@ -1,3 +1,4 @@
+@ -1,111 +0,0 @@
 import tkinter as tk
 from tkinter import font
 import sudoku_solver as solver
@@ -107,5 +108,4 @@ if __name__ == "__main__":
 # Timer showing the time elapsed. Automatically pause if user leaves the window/tab
 # Pausing should show an overlay blocking the 9x9 board with "Game Paused" text and a Click to Resume butotn
 # Pause / Solve / Reset / Hint / Check / New Puzzle buttons
-
 
