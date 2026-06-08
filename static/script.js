@@ -1,10 +1,3 @@
-function showScreen(screenId) {
-    document.querySelectorAll('#app > div').forEach(div => {
-        div.classList.add('hidden')
-    })
-    document.getElementById(screenId).classList.remove('hidden')
-}
-
 let selectedCell = null
 let steps = []
 let currentStep = 0
