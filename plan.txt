@@ -27,6 +27,7 @@
 # Timer showing the time elapsed. Automatically pause if user leaves the window/tab
 # Pausing should show an overlay blocking the 9x9 board with "Game Paused" text and a Click to Resume butotn
 # Pause / Solve / Reset / Hint / Check / New Puzzle buttons
+# Show a congratulatory screen at the end with the time
 
 # Home page
 # Learn to Sudoku
