@@ -760,48 +760,17 @@ function clearMode2Highlights() {
 }
 
 function solveGame() {
-    if (!mode2Steps) return
-
-    if (mode2CurrentStep >= mode2Steps.length - 1) {
-        // already at the end — show final board
-        for (let i = 0; i < 9; i++) {
-            for (let j = 0; j < 9; j++) {
-                mode2Board[i][j] = mode2Solution[i][j]
-            }
+    if (!mode2Solution) return
+    
+    // fill the board with the solution
+    for (let i = 0; i < 9; i++) {
+        for (let j = 0; j < 9; j++) {
+            mode2Board[i][j] = mode2Solution[i][j]
         }
-        renderMode2Board()
-        clearInterval(timerInterval)
-        document.getElementById('mode2-status').textContent = 'Solved!'
-        return
     }
-
-    // advance one step
-    mode2CurrentStep++
-    const step = mode2Steps[mode2CurrentStep]
-
-    // apply the step to the board
-    if (step.value !== 0) {
-        const [r, c] = step.cells[0]
-        mode2Board[r][c] = step.value
-    }
-
-    // highlight key cells blue and discard cells red — same as Mode 1
-    renderMode2Board()
+    
+    clearInterval(timerInterval)
     clearMode2Highlights()
-
-    for (const [r, c] of step.cells) {
-        document.getElementById(`cell2-${r}-${c}`).classList.add('highlight-cell')
-    }
-    for (const [r, c, v] of step.discarded) {
-        const cell = document.getElementById(`cell2-${r}-${c}`)
-        if (!cell.classList.contains('highlight-cell')) {
-            cell.classList.add('highlight-discard')
-        }
-        // red strikethrough on the specific digit
-        const spans = cell.querySelectorAll('.candidate')
-        if (spans.length >= v) spans[v - 1].classList.add('discarded-cand')
-    }
-
-    document.getElementById('mode2-status').textContent =
-        `Step ${mode2CurrentStep + 1} of ${mode2Steps.length}: ${step.strategy}`
+    renderMode2Board()
+    document.getElementById('mode2-status').textContent = 'Solved!'
 }
