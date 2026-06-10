@@ -41,6 +41,9 @@ let timerPaused = false     // whether the timer is currently paused
 let hintLevel = 0
 let hintStepIndex = -1  // which step in mode2Steps the current hint is pointing at
 
+let hintsUsed = 0
+let checksUsed = 0
+let solveUsed = false
 
 function showScreen(screenId) {
     document.querySelectorAll('#app > div').forEach(div => {
@@ -380,6 +383,9 @@ async function newPuzzle() {
     mode2CurrentStep = -1                               // reset solve walkthrough
     hintLevel = 0                                       // reset hint state
     hintStepIndex = -1
+    hintsUsed = 0
+    checksUsed = 0
+    solveUsed = false
 
     // parse initial candidates same way as Mode 1
     mode2InitialCandidates = {}
@@ -629,12 +635,18 @@ function resetGame() {
     resetTimer()
     startTimer()
 
+    // reset counter
+    hintsUsed = 0
+    checksUsed = 0
+    solveUsed = false
+
     renderMode2Board()
 }
 
 function checkGame() {
     if (!mode2Board || !mode2Solution) return
 
+    checksUsed++
     let errors = 0
 
     for (let i = 0; i < 9; i++) {
@@ -663,6 +675,8 @@ function checkGame() {
 
 
 function checkComplete() {
+    console.log('checkComplete called')
+
     // check if every cell is filled
     for (let i = 0; i < 9; i++) {
         for (let j = 0; j < 9; j++) {
@@ -682,13 +696,14 @@ function checkComplete() {
 
     // all correct!
     clearInterval(timerInterval)  // stop the timer
-    document.getElementById('mode2-status').textContent = '🎉 Solved!'
+    showEnding()
 }
 
 
 function hintGame() {
     if (!mode2Steps || mode2Steps.length === 0) return
 
+    hintsUsed++
     // find the next unsolved step — a step whose cell hasn't been filled yet by the player
     if (hintStepIndex === -1) {
         // find the first step that's still relevant
@@ -762,6 +777,7 @@ function clearMode2Highlights() {
 function solveGame() {
     if (!mode2Solution) return
     
+    solveUsed = true
     // fill the board with the solution
     for (let i = 0; i < 9; i++) {
         for (let j = 0; j < 9; j++) {
@@ -772,5 +788,19 @@ function solveGame() {
     clearInterval(timerInterval)
     clearMode2Highlights()
     renderMode2Board()
-    document.getElementById('mode2-status').textContent = 'Solved!'
+    checkComplete()
+}
+
+function showEnding() {
+    // capture the time display before timer stops
+    const timeEl = document.getElementById('timer-display')
+    document.getElementById('ending-time').textContent = timeEl.textContent
+    document.getElementById('ending-hints').textContent = hintsUsed
+    document.getElementById('ending-checks').textContent = checksUsed
+    document.getElementById('ending-solve').textContent = solveUsed ? 'Yes' : 'No'
+    document.getElementById('ending-overlay').classList.remove('hidden')
+}
+
+function hideEnding() {
+    document.getElementById('ending-overlay').classList.add('hidden')
 }

@@ -116,9 +116,38 @@
                     <button class="btn-step" onclick="checkGame()">✓ Check</button>
                     <button class="btn-step" onclick="solveGame()">⚡ Solve</button>
                 </div>
-
             </div>
         </div>
+        <!-- Ending overlay — outside all screens so fixed positioning works -->
+    <div class="ending-overlay hidden" id="ending-overlay">
+        <div class="ending-card">
+            <div class="header-bar"></div>
+            <div class="ending-content">
+                <p class="ending-label">PUZZLE COMPLETE</p>
+                <h1 class="ending-title">🎉</h1>
+                <div class="ending-stats">
+                    <div class="ending-stat">
+                        <span class="stat-label">Time</span>
+                        <span class="stat-value" id="ending-time">0:00</span>
+                    </div>
+                    <div class="ending-stat">
+                        <span class="stat-label">Hints</span>
+                        <span class="stat-value" id="ending-hints">0</span>
+                    </div>
+                    <div class="ending-stat">
+                        <span class="stat-label">Checks</span>
+                        <span class="stat-value" id="ending-checks">0</span>
+                    </div>
+                    <div class="ending-stat">
+                        <span class="stat-label">Solved For Me</span>
+                        <span class="stat-value" id="ending-solve">No</span>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="newPuzzle(); hideEnding()">New Puzzle</button>
+                <button class="btn-secondary" onclick="showScreen('home-screen'); hideEnding()">Home</button>
+            </div>
+        </div>
+    </div>
     </div>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
